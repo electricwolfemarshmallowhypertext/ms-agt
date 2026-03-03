@@ -106,6 +106,7 @@ Works with **12+ agent frameworks** including:
 
 | Framework | Stars | Integration |
 |-----------|-------|-------------|
+| [**Microsoft Agent Framework**](https://github.com/microsoft/agent-framework) | 7.6K+ ⭐ | **Native Middleware** |
 | [Dify](https://github.com/langgenius/dify) | 65K+ ⭐ | Plugin |
 | [LlamaIndex](https://github.com/run-llama/llama_index) | 47K+ ⭐ | Middleware |
 | [LangGraph](https://github.com/langchain-ai/langgraph) | 24K+ ⭐ | Adapter |
