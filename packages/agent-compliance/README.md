@@ -1,12 +1,12 @@
 <div align="center">
 
-# Agent Governance
+# Agent Compliance
 
-**The safety, trust, and reliability platform for production AI agents**
+**Unified installer and compliance documentation for the Agent Governance Toolkit**
 
 *One install for the complete governance stack — kernel · trust mesh · runtime supervisor · reliability engineering*
 
-[![PyPI](https://img.shields.io/badge/pypi-ai--agent--governance-blue.svg)](https://pypi.org/project/ai-agent-governance/)
+[![PyPI](https://img.shields.io/badge/pypi-ai--agent--compliance-blue.svg)](https://pypi.org/project/ai-agent-compliance/)
 [![CI](https://github.com/imran-siddique/agent-governance/actions/workflows/ci.yml/badge.svg)](https://github.com/imran-siddique/agent-governance/actions/workflows/ci.yml)
 [![GitHub Stars](https://img.shields.io/github/stars/imran-siddique/agent-governance?style=social)](https://github.com/imran-siddique/agent-governance/stargazers)
 [![Sponsor](https://img.shields.io/badge/sponsor-❤️-ff69b4)](https://github.com/sponsors/imran-siddique)
@@ -14,7 +14,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ```
-pip install ai-agent-governance[full]
+pip install ai-agent-compliance[full]
 ```
 
 [Architecture](#architecture) • [Quick Start](#quick-start) • [Components](#components) • [Why Unified?](#why-a-unified-governance-stack) • [Ecosystem](#the-agent-governance-ecosystem) • [OWASP Compliance](docs/OWASP-COMPLIANCE.md) • [Traction](docs/TRACTION.md)
@@ -31,8 +31,8 @@ pip install ai-agent-governance[full]
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      agent-governance                           │
-│                  pip install ai-agent-governance[full]           │
+│                      agent-compliance                            │
+│                  pip install ai-agent-compliance[full]            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │   ┌───────────────────┐      ┌───────────────────────────┐     │
@@ -93,14 +93,14 @@ Install only what you need:
 
 ```bash
 # Core: kernel + trust mesh
-pip install ai-agent-governance
+pip install ai-agent-compliance
 
 # Full stack: adds hypervisor + SRE
-pip install ai-agent-governance[full]
+pip install ai-agent-compliance[full]
 
 # À la carte
-pip install ai-agent-governance[hypervisor]
-pip install ai-agent-governance[sre]
+pip install ai-agent-compliance[hypervisor]
+pip install ai-agent-compliance[sre]
 ```
 
 ---
@@ -148,7 +148,7 @@ The meta-package ensures all components are version-compatible and properly inte
 ## The Agent Governance Ecosystem
 
 ```
-agent-governance ─── The meta-package (you are here)
+agent-compliance ─── The meta-package (you are here)
 ├── agent-os-kernel ─── Governance kernel
 ├── agentmesh-platform ─── Zero-trust mesh
 ├── agent-hypervisor ─── Runtime supervisor (optional)
@@ -177,13 +177,13 @@ python examples/governed_agent.py
 
 ```bash
 # LangChain
-pip install langchain ai-agent-governance
+pip install langchain ai-agent-compliance
 
 # CrewAI
-pip install crewai ai-agent-governance
+pip install crewai ai-agent-compliance
 
 # AutoGen
-pip install pyautogen ai-agent-governance
+pip install pyautogen ai-agent-compliance
 ```
 
 ---

@@ -1,8 +1,8 @@
 """
-Agent Governance - The complete AI agent governance stack.
+Agent Compliance - Unified installer and compliance documentation.
 
 Install the full stack:
-    pip install ai-agent-governance[full]
+    pip install ai-agent-compliance[full]
 
 Components:
     - agent-os-kernel: Governance kernel with policy enforcement

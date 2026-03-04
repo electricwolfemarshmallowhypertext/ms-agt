@@ -41,7 +41,7 @@ pip install -e "packages/agent-os[dev]"
 pip install -e "packages/agent-mesh[dev]"
 pip install -e "packages/agent-hypervisor[dev]"
 pip install -e "packages/agent-sre[dev]"
-pip install -e "packages/agent-governance[dev]"
+pip install -e "packages/agent-compliance[dev]"
 
 # Run tests
 pytest
@@ -57,7 +57,7 @@ This is a mono-repo with five packages:
 | `agentmesh` | `packages/agent-mesh/` | Inter-agent trust and identity mesh |
 | `agent-hypervisor` | `packages/agent-hypervisor/` | Runtime sandboxing and capability isolation |
 | `agent-sre` | `packages/agent-sre/` | Observability, alerting, and reliability |
-| `ai-agent-governance` | `packages/agent-governance/` | Unified installer and compliance docs |
+| `ai-agent-compliance` | `packages/agent-compliance/` | Unified installer and compliance docs |
 
 ### Coding Guidelines
 
