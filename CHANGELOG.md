@@ -9,27 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.1] - 2026-03-06
 
+### Added
+
+- **CODEOWNERS** — Default and per-package code ownership for review routing.
+- **SBOM workflow** — Generates SPDX-JSON and CycloneDX-JSON on every release
+  with GitHub attestation via `actions/attest-sbom`.
+
 ### Changed
+
 - **Microsoft org release** — First publish from `microsoft/agent-governance-toolkit`
-- Added MIT license headers to 1,159 source files
-- Migrated all 215 documentation URLs from personal repos to Microsoft org
-- Replaced personal email references with team alias (`agt@microsoft.com`)
-- Enhanced README with CI badge, navigation links, CLA/Code of Conduct sections
+- Added MIT license headers to 1,159 source files across all packages.
+- Migrated all 215 documentation URLs from personal repos to Microsoft org.
+- Replaced personal email references with team alias (`agt@microsoft.com`).
+- Enhanced README with hero section, CI badge, navigation links, CLA/Code of Conduct sections.
+- Bumped all 5 package versions from 1.0.0 to 1.0.1.
 
 ### Fixed
-- Fixed `agentmesh` PyPI link → `agentmesh-platform` (correct package name)
-- Removed internal feed reference from providers.py
+
+- Fixed `agentmesh` PyPI link to `agentmesh-platform` (correct package name).
+- Removed internal feed reference from providers.py.
 
 ### Security
-- Passed full pre-launch security audit (secret scan, pip-audit, Azure ID check)
-- All 43 OSV vulnerabilities from v1.0.0 confirmed resolved
+
+- Secret scan verified clean — no keys, tokens, or credentials in repository.
+- `pip-audit` verified 0 known vulnerabilities across all packages.
+- All 43 OSV vulnerabilities from v1.0.0 confirmed resolved.
 
 ### Repository
-- Archived 5 personal repos with deprecation banners and migration notices
-- Closed 83 open issues and annotated 596 closed items with migration links
-- Posted migration announcements to 89 stargazers
-- Enabled GitHub Discussions, 12 topic tags, OpenSSF Scorecard
 
+- Archived 6 personal repos with deprecation banners and migration notices.
+- Closed 83 open issues and annotated 596 closed items with migration links.
+- Posted migration announcements to 89 stargazers.
+- Enabled GitHub Discussions, 12 topic tags, OpenSSF Scorecard.
 ## [1.0.0] - 2026-03-04
 
 ### Added
@@ -67,4 +78,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pinned all Docker base images by SHA256 digest.
 - Removed `gradle-wrapper.jar` binary artifact.
 
+[1.0.1]: https://github.com/microsoft/agent-governance-toolkit/releases/tag/v1.0.1
 [1.0.0]: https://github.com/microsoft/agent-governance-toolkit/releases/tag/v1.0.0
