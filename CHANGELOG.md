@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   isolation, resource quotas, and Docker/Firecracker execution environments.
 - **Agent SRE** (`agent-sre`) — Observability toolkit with chaos-engineering probes,
   canary deployment framework, and automated incident response.
-- **Agent Compliance** (`ai-agent-compliance`) — Unified compliance installer mapping
+- **Agent Compliance** (`ai-agent-governance`) — Unified compliance installer mapping
   OWASP ASI 2026 (10/10), NIST AI RMF, EU AI Act, and CSA Agentic Trust Framework.
 - Mono-repo CI/CD: lint (ruff) × 5 packages, test matrix (3 Python versions × 4 packages),
   security scanning (safety), CodeQL SAST (Python + JavaScript).

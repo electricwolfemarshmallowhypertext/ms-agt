@@ -35,7 +35,7 @@ Covers **10 of 10 [OWASP Agentic Top 10](https://owasp.org/www-project-agentic-a
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Agent Governance Toolkit                      │
-│               pip install ai-agent-compliance[full]              │
+│               pip install ai-agent-governance[full]              │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │   ┌───────────────────┐      ┌───────────────────────────┐     │
@@ -68,13 +68,13 @@ Covers **10 of 10 [OWASP Agentic Top 10](https://owasp.org/www-project-agentic-a
 | **AgentMesh** | [`agentmesh-platform`](https://pypi.org/project/agentmesh-platform/) | Inter-agent trust — Ed25519 identity, SPIFFE/SVID credentials, trust scoring, A2A/MCP/IATP protocol bridges |
 | **Agent Hypervisor** | [`agent-hypervisor`](https://pypi.org/project/agent-hypervisor/) | Execution isolation — 4-tier privilege rings, saga orchestration, kill switch, joint liability, hash-chain audit |
 | **Agent SRE** | [`agent-sre`](https://pypi.org/project/agent-sre/) | Reliability engineering — SLOs, error budgets, replay debugging, chaos engineering, progressive delivery |
-| **Agent Compliance** | [`ai-agent-compliance`](https://pypi.org/project/ai-agent-compliance/) | Unified installer and compliance documentation |
+| **Agent Compliance** | [`ai-agent-governance`](https://pypi.org/project/ai-agent-governance/) | Unified installer and compliance documentation |
 
 ## Quick Start
 
 ```bash
 # Install the full governance stack
-pip install ai-agent-compliance[full]
+pip install ai-agent-governance[full]
 ```
 
 ```python

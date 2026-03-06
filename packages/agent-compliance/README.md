@@ -6,7 +6,7 @@
 
 *One install for the complete governance stack — kernel · trust mesh · runtime supervisor · reliability engineering*
 
-[![PyPI](https://img.shields.io/badge/pypi-ai--agent--compliance-blue.svg)](https://pypi.org/project/ai-agent-compliance/)
+[![PyPI](https://img.shields.io/badge/pypi-ai--agent--compliance-blue.svg)](https://pypi.org/project/ai-agent-governance/)
 [![CI](https://github.com/microsoft/agent-governance-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/microsoft/agent-governance-toolkit/actions/workflows/ci.yml)
 [![GitHub Stars](https://img.shields.io/github/stars/microsoft/agent-governance-toolkit?style=social)](https://github.com/microsoft/agent-governance-toolkit/stargazers)
 [![Sponsor](https://img.shields.io/badge/sponsor-❤️-ff69b4)](https://github.com/microsoft/agent-governance-toolkit)
@@ -14,7 +14,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ```
-pip install ai-agent-compliance[full]
+pip install ai-agent-governance[full]
 ```
 
 [Architecture](#architecture) • [Quick Start](#quick-start) • [Components](#components) • [Why Unified?](#why-a-unified-governance-stack) • [Ecosystem](#the-agent-governance-ecosystem) • [OWASP Compliance](docs/OWASP-COMPLIANCE.md) • [Traction](docs/TRACTION.md)
@@ -32,7 +32,7 @@ pip install ai-agent-compliance[full]
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                      agent-compliance                            │
-│                  pip install ai-agent-compliance[full]            │
+│                  pip install ai-agent-governance[full]            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │   ┌───────────────────┐      ┌───────────────────────────┐     │
@@ -93,14 +93,14 @@ Install only what you need:
 
 ```bash
 # Core: kernel + trust mesh
-pip install ai-agent-compliance
+pip install ai-agent-governance
 
 # Full stack: adds hypervisor + SRE
-pip install ai-agent-compliance[full]
+pip install ai-agent-governance[full]
 
 # À la carte
-pip install ai-agent-compliance[hypervisor]
-pip install ai-agent-compliance[sre]
+pip install ai-agent-governance[hypervisor]
+pip install ai-agent-governance[sre]
 ```
 
 ---
@@ -177,13 +177,13 @@ python examples/governed_agent.py
 
 ```bash
 # LangChain
-pip install langchain ai-agent-compliance
+pip install langchain ai-agent-governance
 
 # CrewAI
-pip install crewai ai-agent-compliance
+pip install crewai ai-agent-governance
 
 # AutoGen
-pip install pyautogen ai-agent-compliance
+pip install pyautogen ai-agent-governance
 ```
 
 ---

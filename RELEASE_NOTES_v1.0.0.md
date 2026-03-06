@@ -18,7 +18,7 @@
 | **AgentMesh** | Zero-trust identity mesh with DID, trust scoring, delegation chains | `pip install agentmesh-platform` |
 | **Agent Hypervisor** | Execution rings, resource limits, kill switch, saga orchestration | `pip install agent-hypervisor` |
 | **Agent SRE** | SLOs, error budgets, circuit breakers, chaos engineering | `pip install agent-sre` |
-| **Agent Compliance** | Unified installer and compliance documentation | `pip install ai-agent-compliance` |
+| **Agent Compliance** | Unified installer and compliance documentation | `pip install ai-agent-governance` |
 
 ## Security & Compliance
 
@@ -72,7 +72,7 @@ See [docs/PROPOSALS-INDEX.md](docs/PROPOSALS-INDEX.md) for the full list.
 ## Quick Start
 
 ```bash
-pip install ai-agent-compliance[full]
+pip install ai-agent-governance[full]
 ```
 
 ```python
