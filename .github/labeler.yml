@@ -1,0 +1,36 @@
+"agent-os":
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-os-kernel/**"
+"agent-mesh":
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-mesh/**"
+"agent-hypervisor":
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-hypervisor/**"
+"agent-sre":
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-sre/**"
+"agent-governance":
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-governance/**"
+"ci/cd":
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+"documentation":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "**/*.md"
+"security":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "SECURITY.md"
+          - "**/security/**"
+"dependencies":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/pyproject.toml"
+          - "**/requirements*.txt"
+"tests":
+  - changed-files:
+      - any-glob-to-any-file: "**/tests/**"
