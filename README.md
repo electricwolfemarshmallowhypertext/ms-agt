@@ -2,22 +2,27 @@
 
 # 🛡️ Agent Governance Toolkit
 
-**The missing security layer for autonomous AI agents**
+**Application-level security middleware for autonomous AI agents**
 
 *Policy enforcement · Zero-trust identity · Execution sandboxing · Reliability engineering*
 
 [![CI](https://github.com/microsoft/agent-governance-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/microsoft/agent-governance-toolkit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
-[![OWASP Agentic Top 10](https://img.shields.io/badge/OWASP_Agentic_Top_10-10%2F10_Covered-brightgreen)](docs/OWASP-COMPLIANCE.md)
+[![OWASP Agentic Top 10](https://img.shields.io/badge/OWASP_Agentic_Top_10-9%2F10_+_1_Partial-blue)](docs/OWASP-COMPLIANCE.md)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12085/badge)](https://www.bestpractices.dev/projects/12085)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/microsoft/agent-governance-toolkit/badge)](https://scorecard.dev/viewer/?uri=github.com/microsoft/agent-governance-toolkit)
 
-[Quick Start](#quick-start) · [Packages](#packages) · [Integrations](#framework-integrations) · [OWASP Coverage](#owasp-agentic-top-10-coverage) · [Contributing](CONTRIBUTING.md)
+[Quick Start](#quick-start) · [Packages](#packages) · [Integrations](#framework-integrations) · [OWASP Coverage](#owasp-agentic-top-10-coverage) · [Architecture Notes](#architecture-notes) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
 ---
+
+> **⚠️ Architecture Note:** This toolkit provides **application-level policy enforcement** (Python middleware).
+> It does not provide OS kernel-level isolation — agents share the host process by default.
+> For high-security environments, combine with infrastructure isolation (containers, VMs, separate processes).
+> See [Architecture Notes](#architecture-notes) for details on the security model and its boundaries.
 
 ## Why Agent Governance?
 
@@ -25,10 +30,10 @@ AI agent frameworks (LangChain, AutoGen, CrewAI, Google ADK, OpenAI Agents SDK) 
 
 - **Deterministic policy enforcement** before every agent action
 - **Zero-trust identity** with cryptographic agent credentials
-- **Execution isolation** with privilege rings and kill switches
+- **Execution sandboxing** with privilege rings and termination controls
 - **Reliability engineering** with SLOs, error budgets, and chaos testing
 
-Covers **10 of 10 [OWASP Agentic Top 10](https://owasp.org/www-project-agentic-ai-top-10/)** risks out of the box.
+Addresses **9 of 10 [OWASP Agentic Top 10](https://owasp.org/www-project-agentic-ai-top-10/)** risks, with the 10th (behavioral anomaly detection) in active development.
 
 ## Architecture
 
@@ -37,14 +42,14 @@ Covers **10 of 10 [OWASP Agentic Top 10](https://owasp.org/www-project-agentic-a
 │                    Agent Governance Toolkit                      │
 │               pip install ai-agent-compliance[full]              │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
+│                  (Python middleware layer)                       │
 │   ┌───────────────────┐      ┌───────────────────────────┐     │
-│   │   Agent OS Kernel │◄────►│     AgentMesh             │     │
+│   │  Agent OS Engine  │◄────►│     AgentMesh             │     │
 │   │                   │      │                           │     │
 │   │  Policy Engine    │      │  Zero-Trust Identity      │     │
 │   │  Capability Model │      │  Ed25519 / SPIFFE Certs   │     │
 │   │  Audit Logging    │      │  Trust Scoring (0-1000)   │     │
-│   │  Syscall Layer    │      │  A2A + MCP Protocol Bridge│     │
+│   │  Action Interception│    │  A2A + MCP Protocol Bridge│     │
 │   └────────┬──────────┘      └─────────────┬─────────────┘     │
 │            │                               │                   │
 │            ▼                               ▼                   │
@@ -54,7 +59,7 @@ Covers **10 of 10 [OWASP Agentic Top 10](https://owasp.org/www-project-agentic-a
 │   │  Execution Rings  │      │  SLO Engine + Error Budget│     │
 │   │  Resource Limits  │      │  Replay & Chaos Testing   │     │
 │   │  Runtime Sandboxing│     │  Progressive Delivery     │     │
-│   │  Kill Switch      │      │  Circuit Breakers         │     │
+│   │  Termination Ctrl │      │  Circuit Breakers         │     │
 │   └───────────────────┘      └───────────────────────────┘     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -64,9 +69,9 @@ Covers **10 of 10 [OWASP Agentic Top 10](https://owasp.org/www-project-agentic-a
 
 | Package | PyPI | Description |
 |---------|------|-------------|
-| **Agent OS** | [`agent-os-kernel`](https://pypi.org/project/agent-os-kernel/) | Kernel architecture — policy engine, capability model, audit logging, syscall interception, MCP gateway |
+| **Agent OS** | [`agent-os-kernel`](https://pypi.org/project/agent-os-kernel/) | Policy engine — deterministic action evaluation, capability model, audit logging, action interception, MCP gateway |
 | **AgentMesh** | [`agentmesh-platform`](https://pypi.org/project/agentmesh-platform/) | Inter-agent trust — Ed25519 identity, SPIFFE/SVID credentials, trust scoring, A2A/MCP/IATP protocol bridges |
-| **Agent Hypervisor** | [`agent-hypervisor`](https://pypi.org/project/agent-hypervisor/) | Execution isolation — 4-tier privilege rings, saga orchestration, kill switch, joint liability, hash-chain audit |
+| **Agent Hypervisor** | [`agent-hypervisor`](https://pypi.org/project/agent-hypervisor/) | Execution sandboxing — 4-tier privilege rings, saga orchestration, termination control, joint liability, append-only audit log |
 | **Agent SRE** | [`agent-sre`](https://pypi.org/project/agent-sre/) | Reliability engineering — SLOs, error budgets, replay debugging, chaos engineering, progressive delivery |
 | **Agent Compliance** | [`ai-agent-compliance`](https://pypi.org/project/ai-agent-compliance/) | Unified installer and compliance documentation |
 
@@ -99,7 +104,7 @@ if decision.allowed:
 Or install individual packages:
 
 ```bash
-pip install agent-os-kernel    # Just the kernel
+pip install agent-os-kernel    # Just the policy engine
 pip install agentmesh           # Just the trust mesh
 pip install agent-hypervisor    # Just the hypervisor
 pip install agent-sre           # Just the SRE toolkit
@@ -134,7 +139,7 @@ Works with **12+ agent frameworks** including:
 | Unsafe Inter-Agent Communication | ASI-07 | ✅ AgentMesh encrypted channels + trust gates |
 | Cascading Failures | ASI-08 | ✅ Circuit breakers + SLO enforcement |
 | Human-Agent Trust Deficit | ASI-09 | ✅ Full audit trails + flight recorder |
-| Rogue Agents | ASI-10 | 🔄 Kill switch + quarantine (behavioral detection planned) |
+| Rogue Agents | ASI-10 | 🔄 Termination + quarantine implemented; **behavioral anomaly detection in active development** |
 
 ## Documentation
 
@@ -144,6 +149,52 @@ Works with **12+ agent frameworks** including:
 - [Contributing Guide](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)
 - [Support](SUPPORT.md)
+
+## Architecture Notes
+
+### Security Model & Boundaries
+
+This toolkit operates as **Python middleware** — it intercepts agent actions at the application level, not at the OS or hypervisor level. Understanding this boundary is critical:
+
+| What it does | What it does NOT do |
+|---|---|
+| Intercepts and evaluates every agent action before execution | Provide OS kernel-level process isolation |
+| Enforces capability-based least-privilege policies | Prevent a compromised Python process from bypassing policies |
+| Provides cryptographic agent identity (Ed25519) | Run agents in separate address spaces (by default) |
+| Maintains append-only audit logs with hash chains | Guarantee tamper-evidence against in-process adversaries |
+| Terminates non-compliant agents via signal system | Prevent a `try/except BaseException` from catching termination |
+
+**For production deployments requiring strong isolation**, we recommend:
+- Running each agent in a **separate process or container**
+- Writing audit logs to an **external append-only sink** (Azure Monitor, write-once storage)
+- Using OS-level `process.kill()` for termination of isolated agent processes
+
+The POSIX metaphor (kernel, signals, syscalls) is an architectural pattern — it provides a familiar, well-understood mental model for agent governance, but the enforcement boundary is the Python interpreter, not the OS scheduler.
+
+### Trust Score Algorithm
+
+AgentMesh assigns trust scores on a 0–1000 scale with the following tiers:
+
+| Score Range | Tier | Meaning |
+|---|---|---|
+| 900–1000 | Verified Partner | Cryptographically verified, long-term trusted |
+| 700–899 | Trusted | Established track record, elevated privileges |
+| 500–699 | Standard | Default for new agents with valid identity |
+| 300–499 | Probationary | Limited privileges, under observation |
+| 0–299 | Untrusted | Restricted to read-only or blocked |
+
+Default score for new agents: **500** (Standard tier). Score changes are driven by policy compliance history, successful task completions, and trust boundary violations. Full algorithm documentation is in [`packages/agent-mesh/docs/TRUST-SCORING.md`](packages/agent-mesh/docs/TRUST-SCORING.md).
+
+### Benchmark Methodology
+
+Policy enforcement benchmarks are measured on a **30-scenario test suite** covering the OWASP Agentic Top 10 risk categories. Results (e.g., policy violation rates, latency) are specific to this test suite and should not be interpreted as universal guarantees. See [`packages/agent-os/modules/control-plane/benchmark/`](packages/agent-os/modules/control-plane/benchmark/) for methodology, datasets, and reproduction instructions.
+
+### Known Limitations & Roadmap
+
+- **ASI-10 Behavioral Detection**: Termination and quarantine are implemented; anomaly detection (tool-call frequency analysis, action entropy scoring) is in active development
+- **Audit Trail Integrity**: Current hash-chain is in-process; external append-only log integration is planned
+- **Framework Integration Depth**: Current adapters wrap agent execution at the function level; deeper hooks into framework-native tool dispatch and sub-agent spawning are planned
+- **Observability**: OpenTelemetry integration for policy decision tracing is planned
 
 ## Contributing
 
