@@ -13,7 +13,7 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12085/badge)](https://www.bestpractices.dev/projects/12085)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/microsoft/agent-governance-toolkit/badge)](https://scorecard.dev/viewer/?uri=github.com/microsoft/agent-governance-toolkit)
 
-[Quick Start](#quick-start) · [Packages](#packages) · [Integrations](#framework-integrations) · [OWASP Coverage](#owasp-agentic-top-10-coverage) · [Architecture Notes](#architecture-notes) · [Contributing](CONTRIBUTING.md)
+[Quick Start](#quick-start) · [Packages](#packages) · [Integrations](#framework-integrations) · [OWASP Coverage](#owasp-agentic-top-10-coverage) · [Deploy on Azure](docs/deployment/README.md) · [Architecture Notes](#architecture-notes) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -143,6 +143,7 @@ Works with **12+ agent frameworks** including:
 
 ## Documentation
 
+- **[Azure Deployment Guides](docs/deployment/README.md)** — AKS, Azure AI Foundry, Container Apps, OpenClaw sidecar
 - [OWASP Compliance Mapping](docs/OWASP-COMPLIANCE.md)
 - [CSA Agentic Trust Framework Mapping](docs/CSA-ATF-PROPOSAL.md)
 - [Changelog](CHANGELOG.md)
