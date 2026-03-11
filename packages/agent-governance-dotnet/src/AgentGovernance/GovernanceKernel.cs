@@ -1,9 +1,12 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT License.
 
 using AgentGovernance.Audit;
+using AgentGovernance.Hypervisor;
 using AgentGovernance.Integration;
 using AgentGovernance.Policy;
 using AgentGovernance.RateLimiting;
+using AgentGovernance.Security;
+using AgentGovernance.Sre;
 using AgentGovernance.Telemetry;
 
 namespace AgentGovernance;
@@ -37,6 +40,45 @@ public sealed class GovernanceOptions
     /// Defaults to <c>true</c>.
     /// </summary>
     public bool EnableMetrics { get; init; } = true;
+
+    /// <summary>
+    /// Whether to enable execution ring enforcement.
+    /// When enabled, tool calls are checked against the agent's trust-based ring before policy evaluation.
+    /// Defaults to <c>false</c>.
+    /// </summary>
+    public bool EnableRings { get; init; } = false;
+
+    /// <summary>
+    /// Custom ring thresholds for execution ring assignment.
+    /// Only used when <see cref="EnableRings"/> is <c>true</c>.
+    /// When <c>null</c>, uses default thresholds.
+    /// </summary>
+    public Dictionary<ExecutionRing, double>? RingThresholds { get; init; }
+
+    /// <summary>
+    /// Whether to enable prompt injection detection on tool call arguments.
+    /// When enabled, arguments are scanned for injection patterns before policy evaluation.
+    /// Defaults to <c>false</c>.
+    /// </summary>
+    public bool EnablePromptInjectionDetection { get; init; } = false;
+
+    /// <summary>
+    /// Configuration for the prompt injection detector.
+    /// Only used when <see cref="EnablePromptInjectionDetection"/> is <c>true</c>.
+    /// </summary>
+    public DetectionConfig? PromptInjectionConfig { get; init; }
+
+    /// <summary>
+    /// Whether to enable the circuit breaker for governance evaluations.
+    /// Defaults to <c>false</c>.
+    /// </summary>
+    public bool EnableCircuitBreaker { get; init; } = false;
+
+    /// <summary>
+    /// Circuit breaker configuration.
+    /// Only used when <see cref="EnableCircuitBreaker"/> is <c>true</c>.
+    /// </summary>
+    public CircuitBreakerConfig? CircuitBreakerConfig { get; init; }
 }
 
 /// <summary>
@@ -88,6 +130,36 @@ public sealed class GovernanceKernel
     public GovernanceMetrics? Metrics { get; }
 
     /// <summary>
+    /// Execution ring enforcer for privilege-based access control.
+    /// <c>null</c> when ring enforcement is disabled.
+    /// </summary>
+    public RingEnforcer? Rings { get; }
+
+    /// <summary>
+    /// Prompt injection detector for scanning tool call inputs.
+    /// <c>null</c> when prompt injection detection is disabled.
+    /// </summary>
+    public PromptInjectionDetector? InjectionDetector { get; }
+
+    /// <summary>
+    /// Circuit breaker for governance evaluation resilience.
+    /// <c>null</c> when the circuit breaker is disabled.
+    /// </summary>
+    public CircuitBreaker? CircuitBreaker { get; }
+
+    /// <summary>
+    /// Saga orchestrator for multi-step transaction governance.
+    /// Always available.
+    /// </summary>
+    public SagaOrchestrator SagaOrchestrator { get; }
+
+    /// <summary>
+    /// SLO engine for tracking governance service-level objectives.
+    /// Always available — callers register SLO specs and record observations.
+    /// </summary>
+    public SloEngine SloEngine { get; }
+
+    /// <summary>
     /// Whether audit events are enabled.
     /// </summary>
     public bool AuditEnabled { get; }
@@ -112,7 +184,23 @@ public sealed class GovernanceKernel
         AuditEnabled = opts.EnableAudit;
         RateLimiter = new RateLimiter();
         Metrics = opts.EnableMetrics ? new GovernanceMetrics() : null;
-        Middleware = new GovernanceMiddleware(PolicyEngine, AuditEmitter, RateLimiter, Metrics);
+
+        Rings = opts.EnableRings
+            ? (opts.RingThresholds is not null ? new RingEnforcer(opts.RingThresholds) : new RingEnforcer())
+            : null;
+
+        InjectionDetector = opts.EnablePromptInjectionDetection
+            ? (opts.PromptInjectionConfig is not null ? new PromptInjectionDetector(opts.PromptInjectionConfig) : new PromptInjectionDetector())
+            : null;
+
+        CircuitBreaker = opts.EnableCircuitBreaker
+            ? (opts.CircuitBreakerConfig is not null ? new CircuitBreaker(opts.CircuitBreakerConfig) : new CircuitBreaker())
+            : null;
+
+        SagaOrchestrator = new SagaOrchestrator();
+        SloEngine = new SloEngine();
+
+        Middleware = new GovernanceMiddleware(PolicyEngine, AuditEmitter, RateLimiter, Metrics, Rings, InjectionDetector);
 
         // Load any initial policy files.
         foreach (var path in opts.PolicyPaths)

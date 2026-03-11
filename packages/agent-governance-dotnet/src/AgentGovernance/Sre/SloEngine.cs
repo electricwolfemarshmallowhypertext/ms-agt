@@ -243,3 +243,66 @@ public sealed class ErrorBudgetTracker
         }
     }
 }
+
+/// <summary>
+/// Facade for managing multiple SLO trackers across agents and services.
+/// </summary>
+public sealed class SloEngine
+{
+    private readonly Dictionary<string, ErrorBudgetTracker> _trackers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _lock = new();
+
+    /// <summary>
+    /// Registers an SLO and creates a budget tracker for it.
+    /// </summary>
+    public ErrorBudgetTracker Register(SloSpec spec)
+    {
+        ArgumentNullException.ThrowIfNull(spec);
+        lock (_lock)
+        {
+            if (_trackers.ContainsKey(spec.Name))
+                throw new InvalidOperationException($"SLO '{spec.Name}' is already registered.");
+
+            var tracker = new ErrorBudgetTracker(spec);
+            _trackers[spec.Name] = tracker;
+            return tracker;
+        }
+    }
+
+    /// <summary>
+    /// Gets a registered SLO tracker by name. Returns <c>null</c> if not found.
+    /// </summary>
+    public ErrorBudgetTracker? Get(string name)
+    {
+        lock (_lock)
+        {
+            return _trackers.GetValueOrDefault(name);
+        }
+    }
+
+    /// <summary>
+    /// Returns all registered SLO trackers.
+    /// </summary>
+    public IReadOnlyDictionary<string, ErrorBudgetTracker> All()
+    {
+        lock (_lock)
+        {
+            return new Dictionary<string, ErrorBudgetTracker>(_trackers);
+        }
+    }
+
+    /// <summary>
+    /// Returns all SLOs that are currently not being met.
+    /// </summary>
+    public IReadOnlyList<string> Violations()
+    {
+        lock (_lock)
+        {
+            return _trackers
+                .Where(kv => !kv.Value.IsMet())
+                .Select(kv => kv.Key)
+                .ToList()
+                .AsReadOnly();
+        }
+    }
+}

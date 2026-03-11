@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. Licensed under the MIT License.
 
 using AgentGovernance.Audit;
+using AgentGovernance.Hypervisor;
 using AgentGovernance.Policy;
 using AgentGovernance.RateLimiting;
+using AgentGovernance.Security;
 using AgentGovernance.Telemetry;
 
 namespace AgentGovernance.Integration;
@@ -58,6 +60,8 @@ public sealed class GovernanceMiddleware
     private readonly AuditEmitter _auditEmitter;
     private readonly RateLimiter? _rateLimiter;
     private readonly GovernanceMetrics? _metrics;
+    private readonly RingEnforcer? _ringEnforcer;
+    private readonly PromptInjectionDetector? _injectionDetector;
 
     /// <summary>
     /// Initializes a new <see cref="GovernanceMiddleware"/> instance.
@@ -66,11 +70,15 @@ public sealed class GovernanceMiddleware
     /// <param name="auditEmitter">The audit emitter for publishing governance events.</param>
     /// <param name="rateLimiter">Optional rate limiter for enforcing rate-limit policies.</param>
     /// <param name="metrics">Optional metrics collector for OpenTelemetry export.</param>
+    /// <param name="ringEnforcer">Optional execution ring enforcer for privilege-based access control.</param>
+    /// <param name="injectionDetector">Optional prompt injection detector for scanning tool call arguments.</param>
     public GovernanceMiddleware(
         PolicyEngine policyEngine,
         AuditEmitter auditEmitter,
         RateLimiter? rateLimiter = null,
-        GovernanceMetrics? metrics = null)
+        GovernanceMetrics? metrics = null,
+        RingEnforcer? ringEnforcer = null,
+        PromptInjectionDetector? injectionDetector = null)
     {
         ArgumentNullException.ThrowIfNull(policyEngine);
         ArgumentNullException.ThrowIfNull(auditEmitter);
@@ -79,6 +87,8 @@ public sealed class GovernanceMiddleware
         _auditEmitter = auditEmitter;
         _rateLimiter = rateLimiter;
         _metrics = metrics;
+        _ringEnforcer = ringEnforcer;
+        _injectionDetector = injectionDetector;
     }
 
     /// <summary>
@@ -102,6 +112,45 @@ public sealed class GovernanceMiddleware
 
         // Generate a session ID for correlating audit events.
         var sessionId = $"session-{Guid.NewGuid():N}"[..24];
+
+        // Prompt injection pre-check: scan argument values for injection patterns.
+        if (_injectionDetector is not null && arguments is not null)
+        {
+            foreach (var (key, value) in arguments)
+            {
+                if (value is string strValue && !string.IsNullOrWhiteSpace(strValue))
+                {
+                    var detection = _injectionDetector.Detect(strValue);
+                    if (detection.IsInjection)
+                    {
+                        var injectionEvent = new GovernanceEvent
+                        {
+                            Type = GovernanceEventType.ToolCallBlocked,
+                            AgentId = agentId,
+                            SessionId = sessionId,
+                            Data = new Dictionary<string, object>
+                            {
+                                ["tool_name"] = toolName,
+                                ["allowed"] = false,
+                                ["action"] = "deny",
+                                ["reason"] = $"Prompt injection detected in argument '{key}': {detection.InjectionType} ({detection.ThreatLevel})",
+                                ["injection_type"] = detection.InjectionType.ToString(),
+                                ["threat_level"] = detection.ThreatLevel.ToString()
+                            }
+                        };
+                        _auditEmitter.Emit(injectionEvent);
+                        _metrics?.RecordDecision(false, agentId, toolName, 0, false);
+
+                        return new ToolCallResult
+                        {
+                            Allowed = false,
+                            Reason = $"Prompt injection detected in argument '{key}': {detection.InjectionType}",
+                            AuditEntry = injectionEvent
+                        };
+                    }
+                }
+            }
+        }
 
         // Evaluate against the policy engine.
         var decision = _policyEngine.Evaluate(agentId, context);
