@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import collections
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -53,7 +54,9 @@ class ErrorBudget:
     burn_rate_alert: float = 2.0
     burn_rate_critical: float = 10.0
     exhaustion_action: ExhaustionAction = ExhaustionAction.ALERT
-    _events: list[dict[str, Any]] = field(default_factory=list)
+    max_events: int = 100_000
+    _events: collections.deque = field(default_factory=lambda: collections.deque(maxlen=100_000))
+    _monotonic_offset: float = field(default_factory=lambda: time.time() - time.monotonic())
 
     @property
     def remaining(self) -> float:
@@ -76,7 +79,7 @@ class ErrorBudget:
         """Record a good or bad event against the budget."""
         if not good:
             self.consumed += 1.0
-        self._events.append({"good": good, "timestamp": time.time()})
+        self._events.append({"good": good, "timestamp": time.monotonic()})
 
     def burn_rate(self, window_seconds: int | None = None) -> float:
         """Calculate current burn rate within a time window.
@@ -86,7 +89,7 @@ class ErrorBudget:
         >1.0 means faster than expected.
         """
         window = window_seconds or 3600  # Default 1h window
-        cutoff = time.time() - window
+        cutoff = time.monotonic() - window
         recent_events = [e for e in self._events if e["timestamp"] >= cutoff]
         if not recent_events:
             return 0.0

@@ -36,25 +36,29 @@ def cmd_integrity(args: argparse.Namespace) -> int:
     """Run integrity verification or generate manifest."""
     from agent_compliance.integrity import IntegrityVerifier
 
-    if args.generate:
-        verifier = IntegrityVerifier()
-        manifest = verifier.generate_manifest(args.generate)
-        print(f"Manifest written to {args.generate}")
-        print(f"  Files hashed: {len(manifest['files'])}")
-        print(f"  Functions hashed: {len(manifest['functions'])}")
-        return 0
+    try:
+        if args.generate:
+            verifier = IntegrityVerifier()
+            manifest = verifier.generate_manifest(args.generate)
+            print(f"Manifest written to {args.generate}")
+            print(f"  Files hashed: {len(manifest['files'])}")
+            print(f"  Functions hashed: {len(manifest['functions'])}")
+            return 0
 
-    verifier = IntegrityVerifier(manifest_path=args.manifest)
-    report = verifier.verify()
+        verifier = IntegrityVerifier(manifest_path=args.manifest)
+        report = verifier.verify()
 
-    if args.json:
-        import json
+        if args.json:
+            import json
 
-        print(json.dumps(report.to_dict(), indent=2))
-    else:
-        print(report.summary())
+            print(json.dumps(report.to_dict(), indent=2))
+        else:
+            print(report.summary())
 
-    return 0 if report.passed else 1
+        return 0 if report.passed else 1
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
 
 
 def main() -> int:

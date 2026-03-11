@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import collections
 import hashlib
 import uuid
 from dataclasses import dataclass, field
@@ -41,7 +42,7 @@ class SessionVFS:
         self.namespace = namespace or f"/sessions/{session_id}"
         self._files: dict[str, str] = {}
         self._permissions: dict[str, set[str]] = {}
-        self._edit_log: list[VFSEdit] = []
+        self._edit_log: collections.deque[VFSEdit] = collections.deque(maxlen=10_000)
         self._snapshots: dict[str, dict[str, Any]] = {}
 
     def write(self, path: str, content: str, agent_did: str) -> VFSEdit:

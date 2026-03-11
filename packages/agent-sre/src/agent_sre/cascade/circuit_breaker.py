@@ -194,9 +194,9 @@ class CascadeDetector:
             agent_id: CircuitBreaker(agent_id, config) for agent_id in agents
         }
 
-    def get_breaker(self, agent_id: str) -> CircuitBreaker:
-        """Return the circuit breaker for *agent_id*."""
-        return self._breakers[agent_id]
+    def get_breaker(self, agent_id: str) -> CircuitBreaker | None:
+        """Return the circuit breaker for *agent_id*, or None if not registered."""
+        return self._breakers.get(agent_id)
 
     def check_cascade(self) -> bool:
         """Return ``True`` if a cascading failure is detected."""

@@ -198,7 +198,8 @@ public sealed class CircuitBreaker
             switch (_state)
             {
                 case CircuitState.Open:
-                    var elapsed = TimeSpan.FromMilliseconds(Environment.TickCount64 - _openedAtTicks);
+                    var elapsedMs = Math.Max(0, Environment.TickCount64 - _openedAtTicks);
+                    var elapsed = TimeSpan.FromMilliseconds(elapsedMs);
                     var retryAfter = _config.ResetTimeout - elapsed;
                     if (retryAfter < TimeSpan.Zero) retryAfter = TimeSpan.Zero;
                     throw new CircuitBreakerOpenException(retryAfter);

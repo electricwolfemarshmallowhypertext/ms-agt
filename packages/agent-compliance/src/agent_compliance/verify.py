@@ -263,8 +263,19 @@ class GovernanceVerifier:
 
     def _check_control(self, control_id: str, spec: dict) -> ControlResult:
         """Check if a single control's component is importable."""
-        mod_name = spec["module"]
-        component_name = spec["check"]
+        mod_name = spec.get("module")
+        component_name = spec.get("check")
+        control_name = spec.get("name", control_id)
+
+        if not mod_name or not component_name:
+            return ControlResult(
+                control_id=control_id,
+                name=control_name,
+                present=False,
+                module=mod_name or "",
+                component=component_name or "",
+                error="Malformed control spec: missing 'module' or 'check'",
+            )
 
         try:
             mod = importlib.import_module(mod_name)
@@ -272,7 +283,7 @@ class GovernanceVerifier:
             if component is None:
                 return ControlResult(
                     control_id=control_id,
-                    name=spec["name"],
+                    name=control_name,
                     present=False,
                     module=mod_name,
                     component=component_name,
@@ -280,7 +291,7 @@ class GovernanceVerifier:
                 )
             return ControlResult(
                 control_id=control_id,
-                name=spec["name"],
+                name=control_name,
                 present=True,
                 module=mod_name,
                 component=component_name,
@@ -288,7 +299,7 @@ class GovernanceVerifier:
         except ImportError as e:
             return ControlResult(
                 control_id=control_id,
-                name=spec["name"],
+                name=control_name,
                 present=False,
                 module=mod_name,
                 component=component_name,

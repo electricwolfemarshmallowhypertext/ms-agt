@@ -9,8 +9,9 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 
-# Agent ID must be alphanumeric, hyphens, underscores, colons, or dots (e.g. "did:mesh:agent-1")
-_AGENT_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._:@-]*$")
+# Agent ID: DID format (did:method:id) or simple alphanumeric identifiers.
+# Restrict to safe characters — no @, no consecutive special chars.
+_AGENT_ID_PATTERN = re.compile(r"^[a-zA-Z0-9](?:[a-zA-Z0-9._:-]*[a-zA-Z0-9])?$")
 # Max lengths
 _MAX_AGENT_ID_LENGTH = 256
 _MAX_NAME_LENGTH = 256

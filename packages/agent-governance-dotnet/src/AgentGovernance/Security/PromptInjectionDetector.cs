@@ -251,11 +251,14 @@ public sealed class PromptInjectionDetector
         return inputs.Select(Detect).ToList().AsReadOnly();
     }
 
+    private static readonly int MaxCustomPatternLength = 1000;
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(200);
+    private static readonly Regex Base64Pattern = new(@"[A-Za-z0-9+/]{20,}={0,2}", RegexOptions.Compiled, TimeSpan.FromMilliseconds(200));
+
     private (string Name, ThreatLevel Threat)? DetectEncodedPayloads(string input)
     {
         // Look for base64-encoded strings (at least 20 chars).
-        var b64Pattern = new Regex(@"[A-Za-z0-9+/]{20,}={0,2}", RegexOptions.Compiled);
-        var b64Matches = b64Pattern.Matches(input);
+        var b64Matches = Base64Pattern.Matches(input);
 
         foreach (Match match in b64Matches)
         {
@@ -309,9 +312,12 @@ public sealed class PromptInjectionDetector
             (Compile(@"UNION\s+SELECT", RegexOptions.IgnoreCase), InjectionType.DirectOverride, ThreatLevel.High, "sql_union"),
         };
 
-        // Add custom patterns.
+        // Add custom patterns with length and timeout guards.
         foreach (var custom in _config.CustomPatterns)
         {
+            if (custom.Length > MaxCustomPatternLength)
+                continue;
+
             try
             {
                 patterns.Add((Compile(custom), InjectionType.DirectOverride, ThreatLevel.High, $"custom:{custom[..Math.Min(20, custom.Length)]}"));
@@ -327,7 +333,7 @@ public sealed class PromptInjectionDetector
 
     private static Regex Compile(string pattern, RegexOptions extra = RegexOptions.None)
     {
-        return new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | extra);
+        return new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase | extra, RegexTimeout);
     }
 
     private static string ComputeHash(string input)

@@ -12,6 +12,7 @@ from __future__ import annotations
 import ast
 import importlib.abc
 import importlib.machinery
+import pathlib
 import sys
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -177,6 +178,30 @@ class _ASTSecurityVisitor(ast.NodeVisitor):
                         )
                     )
 
+                # Detect importlib.import_module('blocked_mod') bypass
+                if (
+                    node.func.value.id == "importlib"
+                    and node.func.attr == "import_module"
+                    and node.args
+                ):
+                    arg = node.args[0]
+                    if isinstance(arg, ast.Constant) and isinstance(
+                        arg.value, str
+                    ):
+                        top_level = arg.value.split(".")[0]
+                        if top_level in self._blocked_modules:
+                            self.violations.append(
+                                SecurityViolation(
+                                    line=node.lineno,
+                                    column=node.col_offset,
+                                    violation_type="blocked_import",
+                                    description=(
+                                        f"Dynamic import of blocked module "
+                                        f"'{arg.value}' via importlib"
+                                    ),
+                                )
+                            )
+
         self.generic_visit(node)
 
 
@@ -232,11 +257,21 @@ class ExecutionSandbox:
         if not self.config.allowed_paths:
             return False
 
-        # Normalize to forward slashes for comparison
-        normalized = path.replace("\\", "/")
+        # Resolve symlinks and '..' to prevent path traversal attacks
+        try:
+            resolved = pathlib.Path(path).resolve()
+        except (OSError, ValueError):
+            return False
+
         for allowed in self.config.allowed_paths:
-            allowed_norm = allowed.replace("\\", "/")
-            if normalized.startswith(allowed_norm):
+            try:
+                allowed_resolved = pathlib.Path(allowed).resolve()
+            except (OSError, ValueError):
+                continue
+            # Use is_relative_to for safe containment check
+            if resolved == allowed_resolved or resolved.is_relative_to(
+                allowed_resolved
+            ):
                 return True
         return False
 

@@ -87,6 +87,10 @@ class IATPAdapter:
             trust_level = IATPTrustLevel.UNKNOWN
         ring_hint = TRUST_LEVEL_RING_HINTS.get(trust_level, ExecutionRing.RING_3_SANDBOX)
         iatp_score = manifest.calculate_trust_score()
+        import math
+        if not isinstance(iatp_score, (int, float)) or not math.isfinite(iatp_score):
+            iatp_score = 0.0
+        iatp_score = min(max(iatp_score, 0.0), 100.0)
         sigma_hint = min(max(iatp_score / 10.0, 0.0), 1.0)
         analysis = ManifestAnalysis(
             agent_did=agent_did, trust_level=trust_level, ring_hint=ring_hint,
@@ -107,6 +111,10 @@ class IATPAdapter:
             trust_level = IATPTrustLevel.UNKNOWN
         ring_hint = TRUST_LEVEL_RING_HINTS.get(trust_level, ExecutionRing.RING_3_SANDBOX)
         iatp_score = manifest_dict.get("trust_score", 5)
+        import math
+        if not isinstance(iatp_score, (int, float)) or not math.isfinite(iatp_score):
+            iatp_score = 0.0
+        iatp_score = min(max(iatp_score, 0.0), 100.0)
         sigma_hint = min(max(iatp_score / 10.0, 0.0), 1.0)
         actions = []
         for cap in manifest_dict.get("actions", []):

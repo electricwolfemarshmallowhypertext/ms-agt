@@ -36,9 +36,14 @@ def _discover_provider(group: str) -> type | None:
         if eps:
             ep = next(iter(eps))
             provider_cls = ep.load()
-            _provider_cache[group] = provider_cls
-            logger.info("Advanced provider loaded: %s from %s", ep.name, ep.value)
-            return provider_cls
+            if not isinstance(provider_cls, type):
+                logger.warning(
+                    "Provider %s is not a class, skipping", ep.name
+                )
+            else:
+                _provider_cache[group] = provider_cls
+                logger.info("Advanced provider loaded: %s from %s", ep.name, ep.value)
+                return provider_cls
     except Exception:
         logger.debug("Provider discovery failed for %s", group, exc_info=True)
 
@@ -56,8 +61,8 @@ def get_ring_engine(**kwargs: Any):
     if provider is not None:
         return provider(**kwargs)
 
-    from hypervisor.rings.engine import RingEngine
-    return RingEngine(**kwargs)
+    from hypervisor.rings.enforcer import RingEnforcer
+    return RingEnforcer(**kwargs)
 
 
 def get_liability_engine(**kwargs: Any):

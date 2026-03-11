@@ -164,16 +164,43 @@ public sealed class PolicyRule
     private static List<string> SplitCompound(string expression, string keyword)
     {
         var parts = new List<string>();
-        int idx;
-        var remaining = expression;
+        var current = new System.Text.StringBuilder();
+        bool inSingleQuote = false;
+        bool inDoubleQuote = false;
 
-        while ((idx = remaining.IndexOf(keyword, StringComparison.OrdinalIgnoreCase)) >= 0)
+        for (int i = 0; i < expression.Length; i++)
         {
-            parts.Add(remaining[..idx]);
-            remaining = remaining[(idx + keyword.Length)..];
+            char c = expression[i];
+
+            // Toggle quote state (no escaping needed for policy expressions)
+            if (c == '\'' && !inDoubleQuote)
+            {
+                inSingleQuote = !inSingleQuote;
+                current.Append(c);
+                continue;
+            }
+            if (c == '"' && !inSingleQuote)
+            {
+                inDoubleQuote = !inDoubleQuote;
+                current.Append(c);
+                continue;
+            }
+
+            // Only split on keyword when outside quotes
+            if (!inSingleQuote && !inDoubleQuote
+                && i + keyword.Length <= expression.Length
+                && expression.Substring(i, keyword.Length).Equals(keyword, StringComparison.OrdinalIgnoreCase))
+            {
+                parts.Add(current.ToString());
+                current.Clear();
+                i += keyword.Length - 1; // -1 because loop increments
+                continue;
+            }
+
+            current.Append(c);
         }
 
-        parts.Add(remaining);
+        parts.Add(current.ToString());
         return parts;
     }
 

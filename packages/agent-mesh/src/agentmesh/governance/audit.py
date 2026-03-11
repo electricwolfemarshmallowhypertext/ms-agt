@@ -3,14 +3,13 @@
 """
 Audit Log
 
-Append-only JSON log.
-AuditEntry class retains all fields for compatibility, but
-previous_hash and entry_hash are not computed.
+Append-only JSON log with Merkle tree integrity verification.
+Entries added via AuditLog or MerkleAuditChain get automatic hash chaining.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional, Any
 from pydantic import BaseModel, Field
 import hashlib
@@ -26,11 +25,12 @@ class AuditEntry(BaseModel):
     Single audit log entry.
     
     All fields are preserved for API compatibility.
-    Hash fields exist but are not computed (always empty strings).
+    Hash fields are populated when entries are added via
+    :class:`MerkleAuditChain` or :class:`AuditLog`.
     """
     
     entry_id: str = Field(default_factory=lambda: f"audit_{uuid.uuid4().hex[:16]}")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     # Event details
     event_type: str

@@ -24,14 +24,13 @@ jobs:
         run: pip install --require-hashes --no-cache-dir -r requirements/ci-lint.txt
       - name: Lint ${{ matrix.package }}
         run: ruff check packages/${{ matrix.package }}/src/ --select E,F,W --ignore E501
-        continue-on-error: true
 
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package: [agent-os, agent-mesh, agent-hypervisor, agent-sre]
+        package: [agent-os, agent-mesh, agent-hypervisor, agent-sre, agent-compliance]
         python-version: ["3.11", "3.12"]
         include:
           - package: agent-os
@@ -53,7 +52,7 @@ jobs:
             2>/dev/null || pip install --no-cache-dir pytest==8.4.1 pytest-asyncio==1.1.0 2>/dev/null || true
       - name: Test ${{ matrix.package }}
         working-directory: packages/${{ matrix.package }}
-        run: pytest tests/ -x -q --tb=short 2>/dev/null || echo "No tests found"
+        run: pytest tests/ -x -q --tb=short
 
   security:
     runs-on: ubuntu-latest

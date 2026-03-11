@@ -223,8 +223,14 @@ class IntegrityVerifier:
         self._manifest: Optional[dict] = None
 
         if manifest_path and os.path.exists(manifest_path):
-            with open(manifest_path) as f:
-                self._manifest = json.load(f)
+            try:
+                with open(manifest_path, encoding="utf-8") as f:
+                    self._manifest = json.load(f)
+            except json.JSONDecodeError as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Corrupted manifest at %s: %s", manifest_path, e
+                )
 
     def verify(self) -> IntegrityReport:
         """Run full integrity verification.
@@ -358,7 +364,7 @@ class IntegrityVerifier:
                     "sha256": _hash_file(source_file),
                     "path": source_file,
                 }
-            except (ImportError, Exception) as e:
+            except (ImportError, OSError, TypeError) as e:
                 logger.warning("Could not hash module %s: %s", mod_name, e)
 
         for mod_name, func_path in self.critical_functions:
@@ -368,12 +374,12 @@ class IntegrityVerifier:
                 if func:
                     key = f"{mod_name}:{func_path}"
                     manifest["functions"][key] = _hash_function_bytecode(func)
-            except (ImportError, Exception) as e:
+            except (ImportError, OSError, TypeError, AttributeError) as e:
                 logger.warning(
                     "Could not hash function %s.%s: %s", mod_name, func_path, e
                 )
 
-        with open(output_path, "w") as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
         return manifest
