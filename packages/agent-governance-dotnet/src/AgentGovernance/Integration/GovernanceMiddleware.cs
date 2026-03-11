@@ -156,26 +156,55 @@ public sealed class GovernanceMiddleware
         var decision = _policyEngine.Evaluate(agentId, context);
 
         // Enforce rate limiting if the decision indicates a rate-limit policy.
-        if (decision.RateLimited && _rateLimiter is not null && decision.MatchedRule is not null)
+        if (decision.RateLimited && decision.MatchedRule is not null)
         {
-            // Find the matching rule to get the limit expression.
-            var rule = FindMatchingRule(decision.MatchedRule);
-            if (rule?.Limit is not null)
+            if (_rateLimiter is not null)
             {
-                var (maxCalls, window) = RateLimiter.ParseLimit(rule.Limit);
-                var rateLimitKey = $"{agentId}:{toolName}";
-                if (!_rateLimiter.TryAcquire(rateLimitKey, maxCalls, window))
+                // Find the matching rule to get the limit expression.
+                var rule = FindMatchingRule(decision.MatchedRule);
+                if (rule?.Limit is not null)
                 {
-                    decision = new PolicyDecision
+                    var (maxCalls, window) = RateLimiter.ParseLimit(rule.Limit);
+                    var rateLimitKey = $"{agentId}:{toolName}";
+                    if (_rateLimiter.TryAcquire(rateLimitKey, maxCalls, window))
                     {
-                        Allowed = false,
-                        Action = "rate_limited",
-                        MatchedRule = decision.MatchedRule,
-                        Reason = $"Rate limit exceeded: {rule.Limit} for tool '{toolName}'.",
-                        RateLimited = true,
-                        EvaluationMs = decision.EvaluationMs
-                    };
+                        // Under the rate limit — allow the request.
+                        decision = new PolicyDecision
+                        {
+                            Allowed = true,
+                            Action = "rate_limit",
+                            MatchedRule = decision.MatchedRule,
+                            Reason = $"Allowed within rate limit: {rule.Limit} for tool '{toolName}'.",
+                            RateLimited = true,
+                            EvaluationMs = decision.EvaluationMs
+                        };
+                    }
+                    else
+                    {
+                        decision = new PolicyDecision
+                        {
+                            Allowed = false,
+                            Action = "rate_limited",
+                            MatchedRule = decision.MatchedRule,
+                            Reason = $"Rate limit exceeded: {rule.Limit} for tool '{toolName}'.",
+                            RateLimited = true,
+                            EvaluationMs = decision.EvaluationMs
+                        };
+                    }
                 }
+            }
+            else
+            {
+                // No rate limiter configured — allow the request (lenient fallback).
+                decision = new PolicyDecision
+                {
+                    Allowed = true,
+                    Action = "rate_limit",
+                    MatchedRule = decision.MatchedRule,
+                    Reason = "Rate limit rule matched but no rate limiter configured; allowing by default.",
+                    RateLimited = false,
+                    EvaluationMs = decision.EvaluationMs
+                };
             }
         }
 
