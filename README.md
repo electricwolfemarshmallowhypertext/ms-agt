@@ -33,7 +33,7 @@ AI agent frameworks (LangChain, AutoGen, CrewAI, Google ADK, OpenAI Agents SDK) 
 - **Execution sandboxing** with privilege rings and termination controls
 - **Reliability engineering** with SLOs, error budgets, and chaos testing
 
-Addresses **10 of 10 [OWASP Agentic Top 10](https://genai.owasp.org/2025/12/09/owasp-genai-security-project-releases-top-10-risks-and-mitigations-for-agentic-ai-security/)** risks with full coverage across all ASI-01 through ASI-10 categories.
+Addresses **10 of 10 [OWASP Agentic Top 10](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)** risks with full coverage across all ASI-01 through ASI-10 categories.
 
 ## Architecture
 
