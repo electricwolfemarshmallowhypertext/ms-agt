@@ -14,6 +14,11 @@ import uuid
 from collections.abc import Callable
 from typing import Any
 
+from hypervisor.constants import (
+    SAGA_DEFAULT_MAX_RETRIES,
+    SAGA_DEFAULT_RETRY_DELAY_SECONDS,
+    SAGA_DEFAULT_STEP_TIMEOUT_SECONDS,
+)
 from hypervisor.saga.state_machine import (
     Saga,
     SagaState,
@@ -37,8 +42,8 @@ class SagaOrchestrator:
     Joint Liability penalty is triggered.
     """
 
-    DEFAULT_MAX_RETRIES = 2
-    DEFAULT_RETRY_DELAY_SECONDS = 1.0
+    DEFAULT_MAX_RETRIES = SAGA_DEFAULT_MAX_RETRIES
+    DEFAULT_RETRY_DELAY_SECONDS = SAGA_DEFAULT_RETRY_DELAY_SECONDS
 
     def __init__(self) -> None:
         self._sagas: dict[str, Saga] = {}
@@ -59,7 +64,7 @@ class SagaOrchestrator:
         agent_did: str,
         execute_api: str,
         undo_api: str | None = None,
-        timeout_seconds: int = 300,
+        timeout_seconds: int = SAGA_DEFAULT_STEP_TIMEOUT_SECONDS,
         max_retries: int = 0,
     ) -> SagaStep:
         """Add a step to a saga."""

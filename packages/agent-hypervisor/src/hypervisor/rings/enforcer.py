@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from hypervisor.constants import RING_1_ENFORCER_THRESHOLD
 from hypervisor.models import ActionDescriptor, ExecutionRing
 
 
@@ -38,7 +39,7 @@ class RingEnforcer:
     Ring 3 (Sandbox): Read-only / research.
     """
 
-    RING_1_THRESHOLD = 0.70
+    RING_1_THRESHOLD = RING_1_ENFORCER_THRESHOLD
 
     def __init__(self) -> None:
         pass

@@ -96,9 +96,9 @@ class TestSessionParticipantValidation:
         # DID format
         p1 = SessionParticipant(agent_did="did:mesh:agent-1")
         assert p1.agent_did == "did:mesh:agent-1"
-        # Email-like format
-        p2 = SessionParticipant(agent_did="agent@example.com")
-        assert p2.agent_did == "agent@example.com"
+        # Dotted format
+        p2 = SessionParticipant(agent_did="agent.example.com")
+        assert p2.agent_did == "agent.example.com"
         # Simple alphanumeric
         p3 = SessionParticipant(agent_did="agent_123")
         assert p3.agent_did == "agent_123"

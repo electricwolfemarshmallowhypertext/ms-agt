@@ -12,6 +12,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
+from hypervisor.constants import (
+    RATE_LIMIT_FALLBACK,
+    RATE_LIMIT_RING_0,
+    RATE_LIMIT_RING_1,
+    RATE_LIMIT_RING_2,
+    RATE_LIMIT_RING_3,
+)
 from hypervisor.models import ExecutionRing
 
 
@@ -51,10 +58,10 @@ class TokenBucket:
 
 # Default rate limits per ring (requests per second, burst capacity)
 DEFAULT_RING_LIMITS: dict[ExecutionRing, tuple[float, float]] = {
-    ExecutionRing.RING_0_ROOT: (100.0, 200.0),      # SRE: generous
-    ExecutionRing.RING_1_PRIVILEGED: (50.0, 100.0),  # Privileged: moderate
-    ExecutionRing.RING_2_STANDARD: (20.0, 40.0),     # Standard: conservative
-    ExecutionRing.RING_3_SANDBOX: (5.0, 10.0),       # Sandbox: strict
+    ExecutionRing.RING_0_ROOT: RATE_LIMIT_RING_0,
+    ExecutionRing.RING_1_PRIVILEGED: RATE_LIMIT_RING_1,
+    ExecutionRing.RING_2_STANDARD: RATE_LIMIT_RING_2,
+    ExecutionRing.RING_3_SANDBOX: RATE_LIMIT_RING_3,
 }
 
 
@@ -139,7 +146,7 @@ class AgentRateLimiter:
         """Update an agent's rate limit when their ring changes."""
         key = f"{agent_did}:{session_id}"
         rate, capacity = self._limits.get(
-            new_ring, (20.0, 40.0)
+            new_ring, RATE_LIMIT_FALLBACK
         )
         self._buckets[key] = TokenBucket(
             capacity=capacity,
@@ -164,7 +171,7 @@ class AgentRateLimiter:
         self, key: str, ring: ExecutionRing
     ) -> TokenBucket:
         if key not in self._buckets:
-            rate, capacity = self._limits.get(ring, (20.0, 40.0))
+            rate, capacity = self._limits.get(ring, RATE_LIMIT_FALLBACK)
             self._buckets[key] = TokenBucket(
                 capacity=capacity,
                 tokens=capacity,

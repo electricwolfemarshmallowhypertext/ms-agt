@@ -7,6 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+grpc = pytest.importorskip("grpc", reason="grpcio is not installed")
+
 from agentmesh.transport.base import TransportConfig, TransportState
 from agentmesh.transport.grpc_transport import (
     GRPCTransport,

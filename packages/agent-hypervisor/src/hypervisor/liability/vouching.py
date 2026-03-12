@@ -13,6 +13,13 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
+from hypervisor.constants import (
+    VOUCHING_DEFAULT_BOND_PCT,
+    VOUCHING_DEFAULT_MAX_EXPOSURE,
+    VOUCHING_MIN_VOUCHER_SCORE,
+    VOUCHING_SCORE_SCALE,
+)
+
 
 @dataclass
 class VouchRecord:
@@ -41,10 +48,10 @@ class VouchingEngine:
     Sponsorship stub (community edition: approves all, no bonding).
     """
 
-    SCORE_SCALE = 1000.0
-    MIN_VOUCHER_SCORE = 0.50
-    DEFAULT_BOND_PCT = 0.20
-    DEFAULT_MAX_EXPOSURE = 0.80
+    SCORE_SCALE = VOUCHING_SCORE_SCALE
+    MIN_VOUCHER_SCORE = VOUCHING_MIN_VOUCHER_SCORE
+    DEFAULT_BOND_PCT = VOUCHING_DEFAULT_BOND_PCT
+    DEFAULT_MAX_EXPOSURE = VOUCHING_DEFAULT_MAX_EXPOSURE
 
     def __init__(self, max_exposure: float | None = None) -> None:
         self._vouches: dict[str, VouchRecord] = {}

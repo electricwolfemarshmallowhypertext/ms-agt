@@ -9,17 +9,31 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 
+from hypervisor.constants import (
+    MAX_AGENT_ID_LENGTH,
+    MAX_API_PATH_LENGTH,
+    MAX_DURATION_LIMIT,
+    MAX_NAME_LENGTH,
+    MAX_PARTICIPANTS_LIMIT,
+    MAX_UNDO_WINDOW,
+    RING_1_TRUST_THRESHOLD,
+    RING_2_TRUST_THRESHOLD,
+    RISK_WEIGHT_FULL,
+    RISK_WEIGHT_NONE,
+    RISK_WEIGHT_PARTIAL,
+    SESSION_DEFAULT_MIN_EFF_SCORE,
+)
+
 # Agent ID: DID format (did:method:id) or simple alphanumeric identifiers.
 # Restrict to safe characters — no @, no consecutive special chars.
 _AGENT_ID_PATTERN = re.compile(r"^[a-zA-Z0-9](?:[a-zA-Z0-9._:-]*[a-zA-Z0-9])?$")
-# Max lengths
-_MAX_AGENT_ID_LENGTH = 256
-_MAX_NAME_LENGTH = 256
-_MAX_API_PATH_LENGTH = 2048
-# Session config limits
-_MAX_PARTICIPANTS_LIMIT = 1000
-_MAX_DURATION_LIMIT = 604_800  # 7 days in seconds
-_MAX_UNDO_WINDOW = 86_400  # 24 hours in seconds
+# Aliases for backward compatibility
+_MAX_AGENT_ID_LENGTH = MAX_AGENT_ID_LENGTH
+_MAX_NAME_LENGTH = MAX_NAME_LENGTH
+_MAX_API_PATH_LENGTH = MAX_API_PATH_LENGTH
+_MAX_PARTICIPANTS_LIMIT = MAX_PARTICIPANTS_LIMIT
+_MAX_DURATION_LIMIT = MAX_DURATION_LIMIT
+_MAX_UNDO_WINDOW = MAX_UNDO_WINDOW
 
 
 class ConsistencyMode(str, Enum):
@@ -47,9 +61,9 @@ class ExecutionRing(int, Enum):
     @classmethod
     def from_eff_score(cls, eff_score: float, has_consensus: bool = False) -> ExecutionRing:
         """Derive ring level from effective reputation score."""
-        if eff_score > 0.95 and has_consensus:
+        if eff_score > RING_1_TRUST_THRESHOLD and has_consensus:
             return cls.RING_1_PRIVILEGED
-        elif eff_score > 0.60:
+        elif eff_score > RING_2_TRUST_THRESHOLD:
             return cls.RING_2_STANDARD
         else:
             return cls.RING_3_SANDBOX
@@ -66,11 +80,11 @@ class ReversibilityLevel(str, Enum):
     def risk_weight_range(self) -> tuple[float, float]:
         """Return the (min, max) risk weight ω for this reversibility level."""
         if self == ReversibilityLevel.FULL:
-            return (0.1, 0.3)
+            return RISK_WEIGHT_FULL
         elif self == ReversibilityLevel.PARTIAL:
-            return (0.5, 0.8)
+            return RISK_WEIGHT_PARTIAL
         else:
-            return (0.9, 1.0)
+            return RISK_WEIGHT_NONE
 
     @property
     def default_risk_weight(self) -> float:
@@ -102,7 +116,7 @@ def _validate_identifier(value: str, field_name: str) -> None:
     if not _AGENT_ID_PATTERN.match(value):
         raise ValueError(
             f"{field_name} contains invalid characters: {value!r}. "
-            f"Only alphanumeric, hyphens, underscores, colons, dots, and @ are allowed."
+            f"Only alphanumeric, hyphens, underscores, colons, and dots are allowed."
         )
 
 
@@ -125,7 +139,7 @@ class SessionConfig:
     consistency_mode: ConsistencyMode = ConsistencyMode.EVENTUAL
     max_participants: int = 10
     max_duration_seconds: int = 3600
-    min_eff_score: float = 0.60
+    min_eff_score: float = SESSION_DEFAULT_MIN_EFF_SCORE
     enable_audit: bool = True
     enable_blockchain_commitment: bool = False
 

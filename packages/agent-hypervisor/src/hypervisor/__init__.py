@@ -18,6 +18,9 @@ Version: 2.0.0
 
 __version__ = "2.0.2"
 
+# Centralized constants
+from hypervisor import constants  # noqa: F401
+
 # Core models
 from hypervisor.audit.commitment import CommitmentEngine
 
