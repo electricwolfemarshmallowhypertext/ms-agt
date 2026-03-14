@@ -12,6 +12,7 @@ Commands:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 
@@ -37,6 +38,13 @@ def cmd_integrity(args: argparse.Namespace) -> int:
     from agent_compliance.integrity import IntegrityVerifier
 
     try:
+        if args.generate and args.manifest:
+            print(
+                "Error: --manifest and --generate are mutually exclusive",
+                file=sys.stderr,
+            )
+            return 1
+
         if args.generate:
             verifier = IntegrityVerifier()
             manifest = verifier.generate_manifest(args.generate)
@@ -44,6 +52,13 @@ def cmd_integrity(args: argparse.Namespace) -> int:
             print(f"  Files hashed: {len(manifest['files'])}")
             print(f"  Functions hashed: {len(manifest['functions'])}")
             return 0
+
+        if args.manifest and not os.path.exists(args.manifest):
+            print(
+                f"Error: manifest file not found: {args.manifest}",
+                file=sys.stderr,
+            )
+            return 1
 
         verifier = IntegrityVerifier(manifest_path=args.manifest)
         report = verifier.verify()
