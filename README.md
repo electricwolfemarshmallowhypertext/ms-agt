@@ -2,9 +2,9 @@
 
 # 🛡️ Agent Governance Toolkit
 
-**Application-level security middleware for autonomous AI agents**
+**Runtime governance for AI agents — the only toolkit covering all 10 OWASP Agentic risks with 6,100+ tests**
 
-*Policy enforcement · Zero-trust identity · Execution sandboxing · Reliability engineering*
+*Governs what agents DO, not just what they say · Policy enforcement · Zero-trust identity · Sandboxing · SRE — one pip install*
 
 [![CI](https://github.com/microsoft/agent-governance-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/microsoft/agent-governance-toolkit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)

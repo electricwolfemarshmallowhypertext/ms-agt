@@ -1,19 +1,31 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-export { AgentIdentity } from './identity';
+export { AgentIdentity, IdentityRegistry } from './identity';
 export { TrustManager } from './trust';
-export { PolicyEngine } from './policy';
+export { PolicyEngine, PolicyConflictResolver } from './policy';
 export type { PolicyDecision } from './policy';
 export { AuditLogger } from './audit';
 export { AgentMeshClient } from './client';
 
+export {
+  ConflictResolutionStrategy,
+  PolicyScope,
+} from './types';
+
 export type {
   AgentIdentityJSON,
+  IdentityStatus,
   TrustConfig,
   TrustScore,
   TrustTier,
   TrustVerificationResult,
   PolicyRule,
+  Policy,
+  PolicyAction,
+  LegacyPolicyDecision,
+  PolicyDecisionResult,
+  CandidateDecision,
+  ResolutionResult,
   AuditConfig,
   AuditEntry,
   AgentMeshConfig,
