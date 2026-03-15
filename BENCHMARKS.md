@@ -1,6 +1,6 @@
 # Performance Benchmarks
 
-> **Last updated:** March 2026 · **VADP version:** 0.3.x · **Python:** 3.13 · **OS:** Windows 11 (AMD64)
+> **Last updated:** March 2026 · **Toolkit version:** 1.1.x · **Python:** 3.13 · **OS:** Windows 11 (AMD64)
 >
 > All benchmarks use `time.perf_counter()` with 10,000 iterations (unless noted).
 > Numbers are from a development workstation — CI runs on `ubuntu-latest` GitHub-hosted runners.

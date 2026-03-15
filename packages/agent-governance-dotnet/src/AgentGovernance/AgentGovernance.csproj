@@ -7,6 +7,14 @@
     <Version>1.1.0</Version>
     <Description>Agent Governance Toolkit — .NET SDK for policy enforcement, rate limiting, zero-trust identity, OpenTelemetry metrics, and audit logging for autonomous AI agents. Compatible with Microsoft Agent Framework and Semantic Kernel.</Description>
     <PackageId>Microsoft.AgentGovernance</PackageId>
+    <Authors>Microsoft</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/microsoft/agent-governance-toolkit</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/microsoft/agent-governance-toolkit.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>agent;governance;policy;security;owasp;ai;trust;identity</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Copyright (c) Microsoft Corporation</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

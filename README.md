@@ -5,36 +5,52 @@
 [![CI](https://github.com/microsoft/agent-governance-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/microsoft/agent-governance-toolkit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-npm_%40agentmesh%2Fsdk-blue?logo=typescript)](packages/agent-mesh/sdks/typescript/)
+[![.NET 8.0+](https://img.shields.io/badge/.NET_8.0+-NuGet-blue?logo=dotnet)](https://www.nuget.org/packages/Microsoft.AgentGovernance)
 [![OWASP Agentic Top 10](https://img.shields.io/badge/OWASP_Agentic_Top_10-10%2F10_Covered-blue)](docs/OWASP-COMPLIANCE.md)
 [![OpenSSF Best Practices](https://img.shields.io/cii/percentage/12085?label=OpenSSF%20Best%20Practices&logo=opensourcesecurity)](https://www.bestpractices.dev/projects/12085)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/microsoft/agent-governance-toolkit/badge)](https://scorecard.dev/viewer/?uri=github.com/microsoft/agent-governance-toolkit)
 
-Runtime governance for AI agents — the only toolkit covering all **10 OWASP Agentic risks** with **6,100+ tests**. Governs what agents *do*, not just what they say — deterministic policy enforcement, zero-trust identity, execution sandboxing, and SRE — one `pip install`.
+Runtime governance for AI agents — the only toolkit covering all **10 OWASP Agentic risks** with **6,100+ tests**. Governs what agents *do*, not just what they say — deterministic policy enforcement, zero-trust identity, execution sandboxing, and SRE — **Python · TypeScript · .NET**
 
 ## 📋 Getting Started
 
 ### 📦 Installation
 
+**Python** (PyPI)
 ```bash
 pip install agent-governance[full]
-# This will install all sub-packages, see `packages/` for individual packages.
 ```
 
-Or install individual packages:
+**TypeScript / Node.js** (npm)
+```bash
+npm install @agentmesh/sdk
+```
+
+**.NET** (NuGet)
+```bash
+dotnet add package Microsoft.AgentGovernance
+```
+
+<details>
+<summary>Install individual Python packages</summary>
 
 ```bash
-pip install agent-os-kernel    # Policy engine
-pip install agentmesh           # Trust mesh
-pip install agent-runtime       # Runtime supervisor
-pip install agent-sre           # SRE toolkit
-pip install agent-governance    # Compliance & attestation
-pip install agent-marketplace   # Plugin marketplace
-pip install agent-lightning     # RL training governance
+pip install agent-os-kernel        # Policy engine
+pip install agentmesh-platform     # Trust mesh
+pip install agent-runtime          # Runtime supervisor
+pip install agent-sre              # SRE toolkit
+pip install agent-governance       # Compliance & attestation
+pip install agent-marketplace      # Plugin marketplace
+pip install agent-lightning        # RL training governance
 ```
+</details>
 
 ### 📚 Documentation
 
-- **[Quick Start](QUICKSTART.md)** — Get from zero to governed agents in 10 minutes
+- **[Quick Start](QUICKSTART.md)** — Get from zero to governed agents in 10 minutes (Python · TypeScript · .NET)
+- **[TypeScript SDK](packages/agent-mesh/sdks/typescript/README.md)** — npm package with identity, trust, policy, and audit
+- **[.NET SDK](packages/agent-governance-dotnet/README.md)** — NuGet package with full OWASP coverage
 - **[Tutorials](docs/tutorials/)** — Step-by-step guides for policy, identity, integrations, compliance, SRE, and sandboxing
 - **[Azure Deployment](docs/deployment/README.md)** — AKS, Azure AI Foundry, Container Apps, OpenClaw sidecar
 - **[OWASP Compliance](docs/OWASP-COMPLIANCE.md)** — Full ASI-01 through ASI-10 mapping
@@ -48,7 +64,7 @@ Still have questions? File a [GitHub issue](https://github.com/microsoft/agent-g
 - **Deterministic Policy Enforcement**: Every agent action evaluated against policy *before* execution at sub-millisecond latency (<0.1 ms)
   - [Policy Engine](packages/agent-os/) | [Benchmarks](BENCHMARKS.md)
 - **Zero-Trust Agent Identity**: Ed25519 cryptographic credentials, SPIFFE/SVID support, trust scoring on a 0–1000 scale
-  - [AgentMesh](packages/agent-mesh/) | [Trust Scoring docs](packages/agent-mesh/docs/TRUST-SCORING.md)
+  - [AgentMesh](packages/agent-mesh/) | [Trust Scoring](packages/agent-mesh/)
 - **Execution Sandboxing**: 4-tier privilege rings, saga orchestration, termination control, kill switch
   - [Agent Runtime](packages/agent-runtime/) | [Agent Hypervisor](packages/agent-hypervisor/)
 - **Agent SRE**: SLOs, error budgets, replay debugging, chaos engineering, circuit breakers, progressive delivery
@@ -85,6 +101,39 @@ if decision.allowed:
     ...
 ```
 
+### Enforce a policy — TypeScript
+
+```typescript
+import { PolicyEngine } from "@agentmesh/sdk";
+
+const engine = new PolicyEngine([
+  { action: "web_search", effect: "allow" },
+  { action: "shell_exec", effect: "deny" },
+]);
+
+const decision = engine.evaluate("web_search"); // "allow"
+```
+
+### Enforce a policy — .NET
+
+```csharp
+using AgentGovernance;
+using AgentGovernance.Policy;
+
+var kernel = new GovernanceKernel(new GovernanceOptions
+{
+    PolicyPaths = new() { "policies/default.yaml" },
+});
+
+var result = kernel.EvaluateToolCall(
+    agentId: "did:mesh:researcher-1",
+    toolName: "web_search",
+    args: new() { ["query"] = "latest AI news" }
+);
+
+if (result.Allowed) { /* proceed */ }
+```
+
 ## More Examples & Samples
 
 - **[Framework Quickstarts](examples/quickstart/)** — One-file governed agents for LangChain, CrewAI, AutoGen, OpenAI Agents, Google ADK
@@ -95,7 +144,17 @@ if decision.allowed:
 - **[Tutorial 5: Agent Reliability](docs/tutorials/05-agent-reliability.md)** — SLOs, error budgets, chaos testing
 - **[Tutorial 6: Execution Sandboxing](docs/tutorials/06-execution-sandboxing.md)** — Privilege rings and termination
 
-## Packages
+## SDKs & Packages
+
+### Multi-Language SDKs
+
+| Language | Package | Install |
+|----------|---------|---------|
+| **Python** | [`agent-governance[full]`](https://pypi.org/project/agent-governance/) | `pip install agent-governance[full]` |
+| **TypeScript** | [`@agentmesh/sdk`](packages/agent-mesh/sdks/typescript/) | `npm install @agentmesh/sdk` |
+| **.NET** | [`Microsoft.AgentGovernance`](https://www.nuget.org/packages/Microsoft.AgentGovernance) | `dotnet add package Microsoft.AgentGovernance` |
+
+### Python Packages (PyPI)
 
 | Package | PyPI | Description |
 |---------|------|-------------|
@@ -114,11 +173,13 @@ Works with **12+ agent frameworks** including:
 | Framework | Stars | Integration |
 |-----------|-------|-------------|
 | [**Microsoft Agent Framework**](https://github.com/microsoft/agent-framework) | 7.6K+ ⭐ | **Native Middleware** |
+| [**Semantic Kernel**](https://github.com/microsoft/semantic-kernel) | 24K+ ⭐ | **Native (.NET + Python)** |
 | [Dify](https://github.com/langgenius/dify) | 65K+ ⭐ | Plugin |
 | [LlamaIndex](https://github.com/run-llama/llama_index) | 47K+ ⭐ | Middleware |
 | [LangGraph](https://github.com/langchain-ai/langgraph) | 24K+ ⭐ | Adapter |
 | [Microsoft AutoGen](https://github.com/microsoft/autogen) | 42K+ ⭐ | Adapter |
 | [CrewAI](https://github.com/crewAIInc/crewAI) | 28K+ ⭐ | Adapter |
+| [Azure AI Foundry](https://learn.microsoft.com/azure/ai-studio/) | — | Deployment Guide |
 | [OpenAI Agents SDK](https://github.com/openai/openai-agents-python) | — | Middleware |
 | [Google ADK](https://github.com/google/adk-python) | — | Adapter |
 | [Haystack](https://github.com/deepset-ai/haystack) | 22K+ ⭐ | Pipeline |

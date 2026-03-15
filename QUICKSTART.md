@@ -2,7 +2,7 @@
 
 Get from zero to governed AI agents in under 10 minutes.
 
-> **Prerequisites:** Python 3.10+ and pip installed.
+> **Prerequisites:** Python 3.10+ / Node.js 18+ / .NET 8.0+ (any one or more).
 
 ## Architecture Overview
 
@@ -37,6 +37,18 @@ pip install agent-sre              # SLOs, error budgets, chaos testing
 pip install agent-runtime          # Execution supervisor + privilege rings
 pip install agent-marketplace      # Plugin lifecycle management
 pip install agent-lightning        # RL training governance
+```
+
+### TypeScript / Node.js
+
+```bash
+npm install @agentmesh/sdk
+```
+
+### .NET
+
+```bash
+dotnet add package Microsoft.AgentGovernance
 ```
 
 ## 2. Verify Your Installation
@@ -88,6 +100,45 @@ Run it:
 
 ```bash
 python governed_agent.py
+```
+
+### Your First Governed Agent — TypeScript
+
+Create a file called `governed_agent.ts`:
+
+```typescript
+import { PolicyEngine, AgentIdentity, AuditLogger } from "@agentmesh/sdk";
+
+const identity = AgentIdentity.generate("my-agent", ["web_search", "read_file"]);
+
+const engine = new PolicyEngine([
+  { action: "web_search", effect: "allow" },
+  { action: "delete_file", effect: "deny" },
+]);
+
+console.log(engine.evaluate("web_search"));  // "allow"
+console.log(engine.evaluate("delete_file")); // "deny"
+```
+
+### Your First Governed Agent — .NET
+
+Create a file called `GovernedAgent.cs`:
+
+```csharp
+using AgentGovernance;
+using AgentGovernance.Policy;
+
+var kernel = new GovernanceKernel(new GovernanceOptions
+{
+    PolicyPaths = new() { "policies/default.yaml" },
+    EnablePromptInjectionDetection = true,
+});
+
+var result = kernel.EvaluateToolCall("did:mesh:agent-1", "web_search", new() { ["query"] = "AI news" });
+Console.WriteLine($"Allowed: {result.Allowed}");  // True (if policy permits)
+
+result = kernel.EvaluateToolCall("did:mesh:agent-1", "delete_file", new() { ["path"] = "/etc/passwd" });
+Console.WriteLine($"Allowed: {result.Allowed}");  // False
 ```
 
 ## 4. Wrap an Existing Framework
@@ -144,7 +195,9 @@ agent-governance integrity --manifest integrity.json
 
 | What | Where |
 |------|-------|
-| Full API reference | [packages/agent-os/README.md](packages/agent-os/README.md) |
+| Full API reference (Python) | [packages/agent-os/README.md](packages/agent-os/README.md) |
+| TypeScript SDK docs | [packages/agent-mesh/sdks/typescript/README.md](packages/agent-mesh/sdks/typescript/README.md) |
+| .NET SDK docs | [packages/agent-governance-dotnet/README.md](packages/agent-governance-dotnet/README.md) |
 | OWASP coverage map | [docs/OWASP-COMPLIANCE.md](docs/OWASP-COMPLIANCE.md) |
 | Framework integrations | [packages/agent-os/src/agent_os/integrations/](packages/agent-os/src/agent_os/integrations/) |
 | Example applications | [packages/agent-os/examples/](packages/agent-os/examples/) |
