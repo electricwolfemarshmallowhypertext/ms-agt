@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **agent-governance** (formerly `ai-agent-compliance`): Renamed PyPI package from `ai-agent-compliance`
+  to `agent-governance` for better discoverability with the intended audience (platform engineers,
+  security architects). The old name is deprecated and will redirect for 6 months.
+  CLI gains `agent-governance` entry point; `agent-compliance` is retained as a backward-compatible alias.
+
 ## [2.0.2] - 2026-03-12
 
 ### Changed
@@ -46,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added — Supply Chain & Certification (PR #99)
 
 - **Bootstrap integrity verification** — `IntegrityVerifier` hashes 15 governance module source files and 4 critical function bytecodes (SHA-256) against a published `integrity.json` manifest. Detects supply chain tampering before any policy evaluation occurs. (#95)
-- **Governance certification CLI** — `agent-compliance verify` checks all 10 OWASP ASI 2026 controls, generates signed attestations, and outputs shields.io badges for README embedding. `agent-compliance integrity --generate` creates baseline manifests for release signing.
+- **Governance certification CLI** — `agent-governance verify` checks all 10 OWASP ASI 2026 controls, generates signed attestations, and outputs shields.io badges for README embedding. `agent-governance integrity --generate` creates baseline manifests for release signing.
 
 ### Added — Governance Enhancements (PR #90)
 
@@ -81,7 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Install
 
 ```bash
-pip install ai-agent-compliance[full]
+pip install agent-governance[full]
 ```
 
 ## [1.0.1] - 2026-03-06
@@ -132,7 +139,7 @@ pip install ai-agent-compliance[full]
   isolation, resource quotas, and Docker/Firecracker execution environments.
 - **Agent SRE** (`agent-sre`) — Observability toolkit with chaos-engineering probes,
   canary deployment framework, and automated incident response.
-- **Agent Compliance** (`ai-agent-compliance`) — Unified compliance installer mapping
+- **Agent Compliance** (`agent-governance`, formerly `ai-agent-compliance`) — Unified compliance installer mapping
   OWASP ASI 2026 (10/10), NIST AI RMF, EU AI Act, and CSA Agentic Trust Framework.
 - Mono-repo CI/CD: lint (ruff) × 5 packages, test matrix (3 Python versions × 4 packages),
   security scanning (safety), CodeQL SAST (Python + JavaScript).

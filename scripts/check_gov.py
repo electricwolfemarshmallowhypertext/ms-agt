@@ -39,7 +39,7 @@ def verify_installation() -> int:
     print("Core Packages:")
     results.append(_check("agent-os-kernel", "agent_os"))
     results.append(_check("agentmesh-platform", "agentmesh"))
-    results.append(_check("ai-agent-compliance", "agent_compliance"))
+    results.append(_check("agent-governance", "agent_compliance"))
     results.append(_check("agent-sre", "agent_sre"))
     print()
 
@@ -59,10 +59,10 @@ def verify_installation() -> int:
     print("Governance CLI:")
     try:
         from agent_compliance.cli.main import cmd_verify  # noqa: F401
-        print("  ✅  agent-compliance verify............ available")
+        print("  ✅  agent-governance verify............ available")
         results.append(True)
     except ImportError:
-        print("  ❌  agent-compliance verify............ not available")
+        print("  ❌  agent-governance verify............ not available")
         results.append(False)
     print()
 
@@ -75,7 +75,7 @@ def verify_installation() -> int:
 
     if not all(results):
         print("To install missing packages:")
-        print("  pip install ai-agent-compliance[full]")
+        print("  pip install agent-governance[full]")
         print()
         return 1
 

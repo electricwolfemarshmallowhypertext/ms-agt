@@ -1,10 +1,13 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 """
-Agent Compliance - Unified installer and compliance documentation.
+Agent Governance - Unified installer and runtime policy enforcement.
 
 Install the full stack:
-    pip install ai-agent-compliance[full]
+    pip install agent-governance[full]
+
+Note: The package was previously published as ``ai-agent-compliance``.
+That name is deprecated and will redirect here for 6 months.
 
 Components:
     - agent-os-kernel: Governance kernel with policy enforcement
@@ -15,7 +18,7 @@ Components:
     - agent-lightning: RL training governance
 """
 
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 
 # Re-export core components for convenience
 try:

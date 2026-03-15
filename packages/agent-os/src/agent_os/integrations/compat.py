@@ -37,11 +37,11 @@ COMPATIBILITY_MATRIX: dict[tuple[str, str], list[tuple[str, str, str, str]]] = {
     ("agent-os-kernel", "agent-sre"): [
         ("2.0.0", "2.99.99", "1.0.0", "1.99.99"),
     ],
-    ("agent-os-kernel", "ai-agent-compliance"): [
+    ("agent-os-kernel", "agent-governance"): [
         ("2.0.0", "2.99.99", "1.0.0", "1.99.99"),
         ("1.0.0", "1.99.99", "1.0.0", "1.99.99"),
     ],
-    ("agentmesh-platform", "ai-agent-compliance"): [
+    ("agentmesh-platform", "agent-governance"): [
         ("2.0.0", "2.99.99", "1.0.0", "1.99.99"),
         ("1.0.0", "1.99.99", "1.0.0", "1.99.99"),
     ],
@@ -54,7 +54,7 @@ KNOWN_PACKAGES = [
     "agent-os-kernel",
     "agentmesh-platform",
     "agent-sre",
-    "ai-agent-compliance",
+    "agent-governance",
     "agent-runtime",
 ]
 

@@ -59,7 +59,7 @@ This is a mono-repo with seven packages:
 | `agentmesh` | `packages/agent-mesh/` | Inter-agent trust and identity mesh |
 | `agent-runtime` | `packages/agent-runtime/` | Runtime sandboxing and capability isolation |
 | `agent-sre` | `packages/agent-sre/` | Observability, alerting, and reliability |
-| `ai-agent-compliance` | `packages/agent-compliance/` | Unified installer and compliance docs |
+| `agent-governance` | `packages/agent-compliance/` | Unified installer and runtime policy enforcement |
 | `agent-marketplace` | `packages/agent-marketplace/` | Plugin lifecycle management for governed agent ecosystems |
 | `agent-lightning` | `packages/agent-lightning/` | RL training governance with governed runners and policy rewards |
 

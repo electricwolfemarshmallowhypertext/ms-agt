@@ -10,7 +10,7 @@ The Agent Governance Toolkit gives you two complementary pieces:
 | Package | Install | Purpose |
 |---------|---------|---------|
 | `agentmesh-platform` | `pip install agentmesh-platform` | `AuditLog` with Merkle-chain integrity |
-| `ai-agent-compliance` | `pip install ai-agent-compliance` | OWASP ASI 2026 compliance CLI |
+| `agent-governance` | `pip install agent-governance` | OWASP ASI 2026 compliance CLI |
 
 This tutorial walks through both, from a single log call to a CI/CD
 compliance gate.
@@ -430,20 +430,20 @@ audit = AuditLog(sink=sink)
 
 ## 6 — OWASP ASI 2026 Compliance Checking
 
-The `ai-agent-compliance` package verifies that your deployment covers
+The `agent-governance` package verifies that your deployment covers
 all 10 OWASP ASI 2026 security controls.
 
 ### 6.1 Install
 
 ```bash
-pip install ai-agent-compliance
+pip install agent-governance
 ```
 
 ### 6.2 Verify Governance Coverage
 
 ```bash
 # Human-readable summary
-agent-compliance verify
+agent-governance verify
 ```
 
 Output:
@@ -467,12 +467,12 @@ Coverage: 10/10 (100%)
 
 ```bash
 # Machine-readable JSON
-agent-compliance verify --json
+agent-governance verify --json
 ```
 
 ```bash
 # Shields.io badge for your README
-agent-compliance verify --badge
+agent-governance verify --badge
 ```
 
 Output:
@@ -503,15 +503,15 @@ been tampered with:
 
 ```bash
 # Generate a baseline manifest
-agent-compliance integrity --generate integrity.json
+agent-governance integrity --generate integrity.json
 
 # Later, verify against it
-agent-compliance integrity --manifest integrity.json
+agent-governance integrity --manifest integrity.json
 ```
 
 ```bash
 # JSON output for automation
-agent-compliance integrity --manifest integrity.json --json
+agent-governance integrity --manifest integrity.json --json
 ```
 
 The integrity checker verifies:
@@ -667,16 +667,16 @@ jobs:
 
       - name: Install governance packages
         run: |
-          pip install agentmesh-platform ai-agent-compliance
+          pip install agentmesh-platform agent-governance
 
       - name: Generate integrity manifest
-        run: agent-compliance integrity --generate integrity.json
+        run: agent-governance integrity --generate integrity.json
 
       - name: Verify OWASP ASI 2026 coverage
-        run: agent-compliance verify --json > asi_report.json
+        run: agent-governance verify --json > asi_report.json
 
       - name: Verify supply-chain integrity
-        run: agent-compliance integrity --manifest integrity.json --json > integrity_report.json
+        run: agent-governance integrity --manifest integrity.json --json > integrity_report.json
 
       - name: Upload compliance artifacts
         if: always()
@@ -689,7 +689,7 @@ jobs:
             integrity.json
 ```
 
-> **Tip:** `agent-compliance verify` exits with code **1** if any
+> **Tip:** `agent-governance verify` exits with code **1** if any
 > control is missing, so the pipeline step will fail automatically.
 
 ---

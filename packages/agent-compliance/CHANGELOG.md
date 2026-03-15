@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-03-15
+
+### Changed
+
+- **Package renamed** from `ai-agent-compliance` to `agent-governance` for better discoverability
+  by the intended audience (platform engineers, security architects).
+  The old name `ai-agent-compliance` is deprecated and will act as a thin redirect for 6 months.
+- Updated PyPI description to reflect the package's actual function: runtime policy enforcement
+  for AI agents.
+- Added `agent-governance` CLI entry point; `agent-compliance` remains as a backward-compatible alias.
+
 ## [1.0.0] - 2026-02-04
 
 ### Added

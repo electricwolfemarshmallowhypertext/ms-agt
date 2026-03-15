@@ -24,7 +24,7 @@ graph LR
 Install the governance toolkit:
 
 ```bash
-pip install ai-agent-compliance[full]
+pip install agent-governance[full]
 ```
 
 Or install individual packages:
@@ -32,7 +32,7 @@ Or install individual packages:
 ```bash
 pip install agent-os-kernel        # Policy enforcement + framework integrations
 pip install agentmesh-platform     # Zero-trust identity + trust cards
-pip install ai-agent-compliance    # OWASP ASI verification + integrity CLI
+pip install agent-governance          # OWASP ASI verification + integrity CLI
 pip install agent-sre              # SLOs, error budgets, chaos testing
 pip install agent-runtime          # Execution supervisor + privilege rings
 pip install agent-marketplace      # Plugin lifecycle management
@@ -50,8 +50,8 @@ python scripts/check_gov.py
 Or use the governance CLI directly:
 
 ```bash
-agent-compliance verify
-agent-compliance verify --badge
+agent-governance verify
+agent-governance verify --badge
 ```
 
 ## 3. Your First Governed Agent
@@ -119,13 +119,13 @@ Verify your deployment covers the OWASP Agentic Security Threats:
 
 ```bash
 # Text summary
-agent-compliance verify
+agent-governance verify
 
 # JSON for CI/CD pipelines
-agent-compliance verify --json
+agent-governance verify --json
 
 # Badge for your README
-agent-compliance verify --badge
+agent-governance verify --badge
 ```
 
 ## 6. Verify Module Integrity
@@ -134,10 +134,10 @@ Ensure no governance modules have been tampered with:
 
 ```bash
 # Generate a baseline integrity manifest
-agent-compliance integrity --generate integrity.json
+agent-governance integrity --generate integrity.json
 
 # Verify against the manifest later
-agent-compliance integrity --manifest integrity.json
+agent-governance integrity --manifest integrity.json
 ```
 
 ## Next Steps

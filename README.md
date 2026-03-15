@@ -52,7 +52,7 @@ Addresses **10 of 10 [OWASP Agentic Top 10](https://genai.owasp.org/resource/owa
 ╔═════════════════════════════════════════════════════════════════════════════╗
 ║                                                                             ║
 ║               ════════  AGENT GOVERNANCE TOOLKIT   ═══════════              ║
-║                    pip install ai-agent-compliance[full]                    ║
+║                    pip install agent-governance[full]                       ║
 ║                                                                             ║
 ║      Agent Action ───► POLICY CHECK ───► Allow / Deny    (< 0.1 ms)         ║
 ║                                                                             ║
@@ -93,7 +93,7 @@ Addresses **10 of 10 [OWASP Agentic Top 10](https://genai.owasp.org/resource/owa
 | **AgentMesh** | [`agentmesh-platform`](https://pypi.org/project/agentmesh-platform/) | Inter-agent trust — Ed25519 identity, SPIFFE/SVID credentials, trust scoring, A2A/MCP/IATP protocol bridges |
 | **Agent Runtime** | [`agent-runtime`](packages/agent-runtime/) | Execution supervisor — 4-tier privilege rings, saga orchestration, termination control, joint liability, append-only audit log |
 | **Agent SRE** | [`agent-sre`](https://pypi.org/project/agent-sre/) | Reliability engineering — SLOs, error budgets, replay debugging, chaos engineering, progressive delivery |
-| **Agent Compliance** | [`ai-agent-compliance`](https://pypi.org/project/ai-agent-compliance/) | Regulatory compliance — GDPR, HIPAA, SOX audit frameworks |
+| **Agent Compliance** | [`agent-governance`](https://pypi.org/project/agent-governance/) | Runtime policy enforcement — OWASP ASI 2026 controls, governance attestation, integrity verification |
 | **Agent Marketplace** | [`agent-marketplace`](packages/agent-marketplace/) | Plugin lifecycle — discover, install, verify, and sign plugins |
 | **Agent Lightning** | [`agent-lightning`](packages/agent-lightning/) | RL training governance — governed runners, policy rewards |
 
@@ -101,7 +101,7 @@ Addresses **10 of 10 [OWASP Agentic Top 10](https://genai.owasp.org/resource/owa
 
 ```bash
 # Install the full governance stack
-pip install ai-agent-compliance[full]
+pip install agent-governance[full]
 ```
 
 ```python
