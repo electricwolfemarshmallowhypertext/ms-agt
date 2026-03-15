@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi
     strategy:
+      fail-fast: false
       matrix:
         package: [agent-os, agent-mesh, agent-hypervisor, agent-sre, agent-compliance]
     steps:
@@ -88,5 +89,6 @@ jobs:
           subject-path: packages/agent-governance-dotnet/nupkg/*.nupkg
 
       - name: Publish to NuGet
+        if: ${{ secrets.NUGET_API_KEY != '' }}
         working-directory: packages/agent-governance-dotnet
-        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate

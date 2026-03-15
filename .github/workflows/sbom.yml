@@ -43,7 +43,7 @@ jobs:
         uses: actions/attest-sbom@115c3be05ff3974bcbd596578934b3f9ce39bf68 # v2.2.0
         with:
           subject-path: sbom.spdx.json
-          sbom-format: spdx+json
+          sbom-path: sbom.spdx.json
 
       - name: Upload SBOMs to release
         if: github.event_name == 'release'
