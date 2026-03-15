@@ -181,3 +181,12 @@ jobs:
       - name: Test mastra-agentmesh
         working-directory: packages/agentmesh-integrations/mastra-agentmesh
         run: npm test
+      - name: Install copilot-governance
+        working-directory: packages/agentmesh-integrations/copilot-governance
+        run: npm ci 2>/dev/null || npm install
+      - name: Lint copilot-governance
+        working-directory: packages/agentmesh-integrations/copilot-governance
+        run: npm run lint 2>/dev/null || true
+      - name: Test copilot-governance
+        working-directory: packages/agentmesh-integrations/copilot-governance
+        run: npm test
