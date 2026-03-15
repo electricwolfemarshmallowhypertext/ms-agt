@@ -7,12 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-03-15
+
+### 🚀 Highlights
+
+**Multi-language SDK readiness, TypeScript full parity, .NET NuGet hardening, 70+ commits since v1.1.0.** This release makes the toolkit a true polyglot governance layer — Python, TypeScript, and .NET are all first-class citizens with install instructions, quickstarts, and package metadata ready for registry publishing.
+
+### Added
+
+- **TypeScript SDK full parity** (— PolicyEngine + AgentIdentity) — rich policy evaluation with 4 conflict resolution strategies, expression evaluator, rate limiting, YAML/JSON policy documents, Ed25519 identity with lifecycle/delegation/JWK/JWKS/DID export, IdentityRegistry with cascade revocation. 136 tests passing. (#269)
+- **@agentmesh/sdk 1.0.0** — TypeScript package now publish-ready with `exports` field, `prepublishOnly` build hook, correct `repository.directory`, MIT license.
+- **Multi-language README** — root README now surfaces Python (PyPI), TypeScript (npm), and .NET (NuGet) install sections, badges, quickstart code, and a multi-SDK packages table.
+- **Multi-language QUICKSTART** — getting started guide now covers all three SDKs with code examples.
+- **Semantic Kernel + Azure AI Foundry** added to framework integration table.
+- **5 standalone framework quickstarts** — one-file runnable examples for LangChain, CrewAI, AutoGen, OpenAI Agents, Google ADK.
+- **Competitive comparison page** — vs NeMo Guardrails, Guardrails AI, LiteLLM, Portkey (`docs/COMPARISON.md`).
+- **GitHub Copilot Extension** — agent governance code review extension for Copilot.
+- **Observability integrations** — Prometheus, OpenTelemetry, PagerDuty, Grafana (#49).
+- **NIST RFI mapping** — question-by-question mapping to NIST AI Agent Security RFI 2026-00206 (#29).
+- **Performance benchmarks** — published BENCHMARKS.md with p50/p99 latency, throughput at 50 concurrent agents (#231).
+- **6 comprehensive governance tutorials** — policy engine, trust & identity, framework integrations, audit & compliance, agent reliability, execution sandboxing (#187).
+- **Azure deployment guides** — AKS, Azure AI Foundry, Container Apps, OpenClaw sidecar.
+
 ### Changed
 
-- **agent-governance** (formerly `ai-agent-compliance`): Renamed PyPI package from `ai-agent-compliance`
-  to `agent-governance` for better discoverability with the intended audience (platform engineers,
-  security architects). The old name is deprecated and will redirect for 6 months.
-  CLI gains `agent-governance` entry point; `agent-compliance` is retained as a backward-compatible alias.
+- **agent-governance** (formerly `ai-agent-compliance`): Renamed PyPI package for better discoverability.
+- **README architecture disclaimer** reframed from apology to confidence — leads with enforcement model, composes with container isolation (#240).
+- **README tagline** updated for OWASP 10/10 discoverability.
+- **.NET NuGet metadata** enhanced — Authors, License, RepositoryUrl, Tags, ReadmeFile in csproj.
+- All example install strings updated from `ai-agent-compliance[full]` to `agent-governance[full]`.
+- Demo fixed: legacy `agent-hypervisor` path → `agent-runtime`.
+- BENCHMARKS.md: fixed stale "VADP version" reference.
+
+### Fixed
+
+- **CostGuard input validation** — NaN/Inf/negative guards on all budget parameters, `_org_killed` flag prevents bypass after org threshold breach (#272).
+- **CostGuard thread safety** — bound breach history + Lock for concurrent access (#253).
+- **.NET bug sweep** — thread safety, error surfacing, caching, disposal fixes (#252).
+- **Behavioral anomaly detection** implemented in RingBreachDetector.
+- **ErrorBudget._events** bounded with `deque(maxlen=N)` (#172).
+- **VectorClock thread safety** + integrity type hints (#243).
+- **CLI edge case tests** and input validation for agent-compliance (#234).
+- **Cross-package import errors** breaking CI resolved (#222).
+- **OWASP-COMPLIANCE.md** broken link fix + Copilot extension server hardening (#270).
+
+### Security
+
+- Block `importlib` dynamic imports in sandbox (#189).
+- Centralize hardcoded ring thresholds and constants (#188).
+
+### Infrastructure
+
+- Phase 3 architecture rename propagated across 52 files (#221).
+- Deferred architecture extractions — slim OS init, marketplace, lightning (#207).
+- Architecture naming review and layer consolidation (#206).
+- agentmesh-integrations migrated into monorepo (#138).
+- CI test matrix updated with agentmesh-integrations packages (#226).
+- OpenSSF Scorecard improved from 5.3 to ~7.7 (#113, #137).
+
+### Install
+
+```bash
+# Python
+pip install agent-governance[full]
+
+# TypeScript
+npm install @agentmesh/sdk
+
+# .NET
+dotnet add package Microsoft.AgentGovernance
+```
 
 ## [2.0.2] - 2026-03-12
 
@@ -162,6 +226,7 @@ pip install agent-governance[full]
 - Pinned all Docker base images by SHA256 digest.
 - Removed `gradle-wrapper.jar` binary artifact.
 
+[2.1.0]: https://github.com/microsoft/agent-governance-toolkit/releases/tag/v2.1.0
 [1.1.0]: https://github.com/microsoft/agent-governance-toolkit/releases/tag/v1.1.0
 [1.0.1]: https://github.com/microsoft/agent-governance-toolkit/releases/tag/v1.0.1
 [1.0.0]: https://github.com/microsoft/agent-governance-toolkit/releases/tag/v1.0.0

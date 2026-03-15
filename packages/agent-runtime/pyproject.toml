@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-runtime"
-version = "2.0.2"
+version = "2.1.0"
 description = "Agent Runtime — Execution supervisor for multi-agent sessions with privilege rings, saga orchestration, and audit trails"
 readme = "README.md"
 license = "MIT"
