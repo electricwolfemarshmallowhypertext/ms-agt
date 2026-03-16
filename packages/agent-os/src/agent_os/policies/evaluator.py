@@ -33,10 +33,16 @@ class PolicyDecision(BaseModel):
 
 
 class PolicyEvaluator:
-    """Evaluates a set of PolicyDocuments against execution contexts."""
+    """Evaluates a set of PolicyDocuments against execution contexts.
+
+    Supports external policy backends (OPA/Rego, Cedar) alongside the
+    native YAML/JSON engine. YAML rules are evaluated first; if no YAML
+    rule matches, external backends are consulted in registration order.
+    """
 
     def __init__(self, policies: list[PolicyDocument] | None = None) -> None:
         self.policies: list[PolicyDocument] = policies or []
+        self._backends: list[Any] = []
 
     def load_policies(self, directory: str | Path) -> None:
         """Load all YAML policy files from a directory."""
@@ -46,12 +52,78 @@ class PolicyEvaluator:
         for path in sorted(directory.glob("*.yml")):
             self.policies.append(PolicyDocument.from_yaml(path))
 
+    def add_backend(self, backend: Any) -> None:
+        """Register an external policy backend (OPA, Cedar, etc.).
+
+        Backends are consulted in registration order when no YAML rule
+        matches. Each backend must implement ``evaluate(context) ->
+        BackendDecision`` and a ``name`` property.
+
+        Args:
+            backend: An ``ExternalPolicyBackend`` implementation such as
+                ``OPABackend`` or ``CedarBackend`` from
+                ``agent_os.policies.backends``.
+        """
+        self._backends.append(backend)
+
+    def load_rego(
+        self,
+        rego_path: str | None = None,
+        rego_content: str | None = None,
+        package: str = "agentos",
+    ) -> Any:
+        """Convenience: register an OPA/Rego backend.
+
+        Args:
+            rego_path: Path to a ``.rego`` file.
+            rego_content: Inline Rego policy string.
+            package: Rego package name for query construction.
+
+        Returns:
+            The ``OPABackend`` instance.
+        """
+        from .backends import OPABackend
+
+        backend = OPABackend(
+            rego_path=rego_path, rego_content=rego_content, package=package
+        )
+        self.add_backend(backend)
+        return backend
+
+    def load_cedar(
+        self,
+        policy_path: str | None = None,
+        policy_content: str | None = None,
+        entities: list[dict[str, Any]] | None = None,
+    ) -> Any:
+        """Convenience: register a Cedar backend.
+
+        Args:
+            policy_path: Path to a ``.cedar`` policy file.
+            policy_content: Inline Cedar policy string.
+            entities: Cedar entities for authorization context.
+
+        Returns:
+            The ``CedarBackend`` instance.
+        """
+        from .backends import CedarBackend
+
+        backend = CedarBackend(
+            policy_path=policy_path,
+            policy_content=policy_content,
+            entities=entities,
+        )
+        self.add_backend(backend)
+        return backend
+
     def evaluate(self, context: dict[str, Any]) -> PolicyDecision:
         """Evaluate all loaded policy rules against the given context.
 
         Rules are sorted by priority (descending). The first matching rule
-        determines the decision. If no rule matches, the default action from
-        the first policy (or global allow) is used.
+        determines the decision. If no YAML rule matches and external
+        backends are registered, they are consulted in order. If nothing
+        matches, the default action from the first policy (or global allow)
+        is used.
         """
         try:
             all_rules: list[tuple[PolicyRule, PolicyDocument]] = []
@@ -74,6 +146,26 @@ class PolicyEvaluator:
                             "policy": doc.name,
                             "rule": rule.name,
                             "action": rule.action.value,
+                            "context_snapshot": context,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        },
+                    )
+
+            # No YAML rule matched — consult external backends
+            for backend in self._backends:
+                result = backend.evaluate(context)
+                if result.error is None:
+                    return PolicyDecision(
+                        allowed=result.allowed,
+                        matched_rule=None,
+                        action=result.action,
+                        reason=result.reason,
+                        audit_entry={
+                            "policy": f"external:{backend.name}",
+                            "rule": None,
+                            "action": result.action,
+                            "backend": backend.name,
+                            "evaluation_ms": result.evaluation_ms,
                             "context_snapshot": context,
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         },

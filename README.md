@@ -144,6 +144,56 @@ if (result.Allowed) { /* proceed */ }
 - **[Tutorial 5: Agent Reliability](docs/tutorials/05-agent-reliability.md)** — SLOs, error budgets, chaos testing
 - **[Tutorial 6: Execution Sandboxing](docs/tutorials/06-execution-sandboxing.md)** — Privilege rings and termination
 
+## OPA/Rego & Cedar Policy Support
+
+Bring your existing infrastructure policies to agent governance — no new policy DSL required.
+
+### OPA/Rego (Agent OS)
+
+```python
+from agent_os.policies import PolicyEvaluator
+
+evaluator = PolicyEvaluator()
+evaluator.load_rego(rego_content="""
+package agentos
+default allow = false
+allow { input.tool_name == "web_search" }
+allow { input.role == "admin" }
+""")
+
+decision = evaluator.evaluate({"tool_name": "web_search", "role": "analyst"})
+# decision.allowed == True
+```
+
+### Cedar (Agent OS)
+
+```python
+from agent_os.policies import PolicyEvaluator
+
+evaluator = PolicyEvaluator()
+evaluator.load_cedar(policy_content="""
+permit(principal, action == Action::"ReadData", resource);
+forbid(principal, action == Action::"DeleteFile", resource);
+""")
+
+decision = evaluator.evaluate({"tool_name": "read_data", "agent_id": "agent-1"})
+# decision.allowed == True
+```
+
+### AgentMesh OPA/Cedar
+
+```python
+from agentmesh.governance import PolicyEngine
+
+engine = PolicyEngine()
+engine.load_rego("policies/mesh.rego", package="agentmesh")
+engine.load_cedar(cedar_content='permit(principal, action == Action::"Analyze", resource);')
+
+decision = engine.evaluate("did:mesh:agent-1", {"tool_name": "analyze"})
+```
+
+Three evaluation modes per backend: **embedded engine** (cedarpy/opa CLI), **remote server**, or **built-in fallback** (zero external deps).
+
 ## SDKs & Packages
 
 ### Multi-Language SDKs

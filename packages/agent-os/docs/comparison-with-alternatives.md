@@ -433,7 +433,7 @@ gate22 is an **MCP gateway and control plane** focused on governing which tools 
 | **Context window optimization** | ❌ | ✅ 2-function surface |
 | **Credential management** | ❌ | ✅ Org-shared or per-user |
 | **Non-MCP frameworks** | ✅ 12+ | ❌ MCP-only |
-| **Policy-as-code** | ✅ | Roadmap (OPA/Cedar planned) |
+| **Policy-as-code** | ✅ | ✅ OPA/Rego + Cedar (v2.1.0) |
 
 #### Where gate22 is better
 

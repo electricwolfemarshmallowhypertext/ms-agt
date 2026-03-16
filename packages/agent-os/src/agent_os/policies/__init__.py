@@ -16,6 +16,12 @@ from .conflict_resolution import (
     PolicyScope,
     ResolutionResult,
 )
+from .backends import (
+    BackendDecision,
+    CedarBackend,
+    ExternalPolicyBackend,
+    OPABackend,
+)
 from .evaluator import PolicyDecision, PolicyEvaluator
 from .rate_limiting import RateLimitConfig, RateLimitExceeded, TokenBucket
 from .schema import (
@@ -38,10 +44,14 @@ from .shared import (
 
 __all__ = [
     "AsyncPolicyEvaluator",
+    "BackendDecision",
     "CandidateDecision",
+    "CedarBackend",
     "ConcurrencyStats",
     "Condition",
     "ConflictResolutionStrategy",
+    "ExternalPolicyBackend",
+    "OPABackend",
     "PolicyAction",
     "PolicyCondition",
     "PolicyConflictResolver",

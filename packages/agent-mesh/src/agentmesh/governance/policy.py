@@ -327,6 +327,7 @@ class PolicyEngine:
         self._policies: dict[str, Policy] = {}
         self._rate_limits: dict[str, dict] = {}  # rule_name -> {count, reset_at}
         self._rego_evaluators: list[tuple[str, Any]] = []  # [(package, OPAEvaluator)]
+        self._cedar_evaluators: list[Any] = []  # [CedarEvaluator]
         self._conflict_strategy = ConflictResolutionStrategy(conflict_strategy)
         self._resolver = PolicyConflictResolver(self._conflict_strategy)
 
@@ -542,6 +543,40 @@ class PolicyEngine:
         self._rego_evaluators.append((package, evaluator))
         return evaluator
 
+    # ── Cedar integration ─────────────────────────────────────
+
+    def load_cedar(
+        self,
+        cedar_path: Optional[str] = None,
+        cedar_content: Optional[str] = None,
+        entities: Optional[list] = None,
+        mode: str = "auto",
+    ) -> "CedarEvaluator":  # noqa: F821
+        """
+        Load a .cedar file alongside YAML/JSON and Rego policies.
+
+        Cedar evaluators run after Rego: YAML rules first, then Rego,
+        then Cedar, then defaults.
+
+        Args:
+            cedar_path: Path to a .cedar policy file
+            cedar_content: Inline Cedar policy string
+            entities: Cedar entities for authorization context
+            mode: Evaluation mode (auto, cedarpy, cli, builtin)
+
+        Returns:
+            CedarEvaluator instance for direct use
+        """
+        from agentmesh.governance.cedar import CedarEvaluator
+        evaluator = CedarEvaluator(
+            mode=mode,
+            policy_path=cedar_path,
+            policy_content=cedar_content,
+            entities=entities,
+        )
+        self._cedar_evaluators.append(evaluator)
+        return evaluator
+
     def evaluate(
         self,
         agent_did: str,
@@ -650,7 +685,23 @@ class PolicyEngine:
                     evaluation_ms=elapsed,
                 )
 
-        # 3. No rules matched - use default
+        # 3. Check Cedar policies
+        for cedar_eval in self._cedar_evaluators:
+            # Map context to Cedar action
+            action_name = context.get("action", {}).get("type", context.get("tool_name", "unknown"))
+            cedar_action = f'Action::"{action_name}"' if "::" not in action_name else action_name
+            cedar_result = cedar_eval.evaluate(cedar_action, context)
+            if cedar_result.error is None:
+                elapsed = (datetime.utcnow() - start).total_seconds() * 1000
+                return PolicyDecision(
+                    allowed=cedar_result.allowed,
+                    action="allow" if cedar_result.allowed else "deny",
+                    reason=f"Cedar policy: {'allowed' if cedar_result.allowed else 'denied'}",
+                    evaluated_at=start,
+                    evaluation_ms=elapsed,
+                )
+
+        # 4. No rules matched - use default
         if applicable:
             default = applicable[0].default_action
         else:
