@@ -19,9 +19,9 @@ public class GovernanceMetricsTests : IDisposable
     [Fact]
     public void RecordDecision_AllowedIncrementsCounters()
     {
-        long policyCount = 0;
-        long allowedCount = 0;
-        long blockedCount = 0;
+        long policyBefore = 0, policyAfter = 0;
+        long allowedBefore = 0, allowedAfter = 0;
+        long blockedBefore = 0, blockedAfter = 0;
 
         using var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, listener) =>
@@ -31,24 +31,29 @@ public class GovernanceMetricsTests : IDisposable
         };
         listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, state) =>
         {
-            if (instrument.Name == "agent_governance.policy_decisions") policyCount += measurement;
-            if (instrument.Name == "agent_governance.tool_calls_allowed") allowedCount += measurement;
-            if (instrument.Name == "agent_governance.tool_calls_blocked") blockedCount += measurement;
+            if (instrument.Name == "agent_governance.policy_decisions") policyAfter += measurement;
+            if (instrument.Name == "agent_governance.tool_calls_allowed") allowedAfter += measurement;
+            if (instrument.Name == "agent_governance.tool_calls_blocked") blockedAfter += measurement;
         });
         listener.Start();
+
+        policyBefore = policyAfter;
+        allowedBefore = allowedAfter;
+        blockedBefore = blockedAfter;
 
         _metrics.RecordDecision(allowed: true, "did:mesh:test", "file_read", 0.05);
         listener.RecordObservableInstruments();
 
-        Assert.Equal(1, policyCount);
-        Assert.Equal(1, allowedCount);
-        Assert.Equal(0, blockedCount);
+        Assert.Equal(1, policyAfter - policyBefore);
+        Assert.Equal(1, allowedAfter - allowedBefore);
+        Assert.Equal(0, blockedAfter - blockedBefore);
     }
 
     [Fact]
     public void RecordDecision_DeniedIncrementsBlockedCounter()
     {
-        long blockedCount = 0;
+        long blockedBefore = 0;
+        long blockedAfter = 0;
 
         using var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, listener) =>
@@ -58,20 +63,23 @@ public class GovernanceMetricsTests : IDisposable
         };
         listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, state) =>
         {
-            if (instrument.Name == "agent_governance.tool_calls_blocked") blockedCount += measurement;
+            if (instrument.Name == "agent_governance.tool_calls_blocked") blockedAfter += measurement;
         });
         listener.Start();
+
+        // Capture baseline (measurements from other test instances)
+        blockedBefore = blockedAfter;
 
         _metrics.RecordDecision(allowed: false, "did:mesh:test", "shell_exec", 0.02);
         listener.RecordObservableInstruments();
 
-        Assert.Equal(1, blockedCount);
+        Assert.Equal(1, blockedAfter - blockedBefore);
     }
 
     [Fact]
     public void RecordDecision_RateLimitedIncrementsRateLimitCounter()
     {
-        long rateLimitCount = 0;
+        long rateBefore = 0, rateAfter = 0;
 
         using var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, listener) =>
@@ -81,20 +89,23 @@ public class GovernanceMetricsTests : IDisposable
         };
         listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, state) =>
         {
-            if (instrument.Name == "agent_governance.rate_limit_hits") rateLimitCount += measurement;
+            if (instrument.Name == "agent_governance.rate_limit_hits") rateAfter += measurement;
         });
         listener.Start();
+
+        rateBefore = rateAfter;
 
         _metrics.RecordDecision(allowed: false, "did:mesh:test", "api_call", 0.01, rateLimited: true);
         listener.RecordObservableInstruments();
 
-        Assert.Equal(1, rateLimitCount);
+        Assert.Equal(1, rateAfter - rateBefore);
     }
 
     [Fact]
     public void RecordDecision_RecordsLatencyHistogram()
     {
-        double latency = 0;
+        double latency = -1;
+        bool captured = false;
 
         using var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, listener) =>
@@ -104,9 +115,22 @@ public class GovernanceMetricsTests : IDisposable
         };
         listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, state) =>
         {
-            if (instrument.Name == "agent_governance.evaluation_latency_ms") latency = measurement;
+            if (instrument.Name == "agent_governance.evaluation_latency_ms" && !captured)
+            {
+                // Skip measurements from other test instances; capture only after our flag is set
+            }
         });
         listener.Start();
+
+        // Replace callback now that baseline noise is subscribed
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, state) =>
+        {
+            if (instrument.Name == "agent_governance.evaluation_latency_ms")
+            {
+                latency = measurement;
+                captured = true;
+            }
+        });
 
         _metrics.RecordDecision(allowed: true, "did:mesh:test", "search", 0.087);
 
