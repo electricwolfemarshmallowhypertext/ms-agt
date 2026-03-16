@@ -783,7 +783,7 @@ class ConversationGuardian:
 
         if action in (AlertAction.BREAK, AlertAction.QUARANTINE):
             logger.warning(
-                "A2A Guardian: %s for conversation %s (%s→%s): %s (composite=%.2f)",
+                "A2A Guardian: %s for conversation %s (%s->%s): %s (composite=%.2f)",
                 action.value.upper(),
                 conversation_id,
                 sender,
