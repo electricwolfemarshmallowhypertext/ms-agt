@@ -97,6 +97,11 @@ class AgentIdentity(BaseModel):
     # Delegation
     parent_did: Optional[str] = Field(None, description="Parent agent DID if delegated")
     delegation_depth: int = Field(default=0, ge=0, description="Depth in scope chain")
+    max_initial_trust_score: Optional[int] = Field(
+        None,
+        description="Lineage-bound trust cap: child's initial trust score "
+        "cannot exceed this value (Invariant 6 — Sybil resistance)",
+    )
 
     # Private key stored separately (not serialized)
     _private_key: Optional[ed25519.Ed25519PrivateKey] = None
@@ -214,12 +219,26 @@ class AgentIdentity(BaseModel):
         name: str,
         capabilities: list[str],
         description: Optional[str] = None,
+        max_initial_trust_score: Optional[int] = None,
     ) -> "AgentIdentity":
         """
         Delegate to a child agent with narrowed capabilities.
 
         The child agent's capabilities MUST be a subset of the parent's.
         This is enforced cryptographically - scope chains can only narrow.
+
+        Lineage-bound trust (Invariant 6): if ``max_initial_trust_score``
+        is provided, it is stored on the child identity so that authority
+        resolvers can cap the child's initial trust at
+        ``min(default_score, parent_score)``. This prevents trust washing
+        through sub-agent spawning (Sybil resistance).
+
+        Args:
+            name: Name for the child agent.
+            capabilities: Capabilities to delegate (must be subset of parent's).
+            description: Optional description.
+            max_initial_trust_score: Upper bound on the child's initial trust
+                score. Typically set to the parent's current trust score.
         """
         # Validate capabilities are a subset
         for cap in capabilities:
@@ -240,6 +259,7 @@ class AgentIdentity(BaseModel):
         # Set delegation metadata
         child.parent_did = str(self.did)
         child.delegation_depth = self.delegation_depth + 1
+        child.max_initial_trust_score = max_initial_trust_score
 
         return child
 

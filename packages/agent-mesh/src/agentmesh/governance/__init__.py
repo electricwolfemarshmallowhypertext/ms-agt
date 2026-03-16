@@ -26,6 +26,15 @@ from .audit_backends import (
 from .shadow import ShadowMode, ShadowResult
 from .opa import OPAEvaluator, OPADecision, load_rego_into_engine
 from .cedar import CedarEvaluator, CedarDecision, load_cedar_into_engine
+from .authority import (
+    AuthorityDecision,
+    AuthorityRequest,
+    AuthorityResolver,
+    ActionRequest,
+    DefaultAuthorityResolver,
+    DelegationInfo,
+    TrustInfo,
+)
 from .trust_policy import (
     TrustPolicy,
     TrustRule,
@@ -68,6 +77,13 @@ __all__ = [
     "CedarEvaluator",
     "CedarDecision",
     "load_cedar_into_engine",
+    "AuthorityDecision",
+    "AuthorityRequest",
+    "AuthorityResolver",
+    "ActionRequest",
+    "DefaultAuthorityResolver",
+    "DelegationInfo",
+    "TrustInfo",
     "TrustPolicy",
     "TrustRule",
     "TrustCondition",

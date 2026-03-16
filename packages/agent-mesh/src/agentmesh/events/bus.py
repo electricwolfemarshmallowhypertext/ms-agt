@@ -21,8 +21,10 @@ from typing import Any, Callable
 # Standard event types
 EVENT_TRUST_VERIFIED = "trust.verified"
 EVENT_TRUST_FAILED = "trust.failed"
+EVENT_TRUST_SCORE_CHANGED = "trust.score_changed"
 EVENT_POLICY_EVALUATED = "policy.evaluated"
 EVENT_POLICY_VIOLATED = "policy.violated"
+EVENT_AUTHORITY_RESOLVED = "authority.resolved"
 EVENT_AGENT_REGISTERED = "agent.registered"
 EVENT_AGENT_REVOKED = "agent.revoked"
 EVENT_AUDIT_ENTRY = "audit.entry"
@@ -31,8 +33,10 @@ EVENT_HANDSHAKE_COMPLETED = "handshake.completed"
 ALL_EVENT_TYPES = [
     EVENT_TRUST_VERIFIED,
     EVENT_TRUST_FAILED,
+    EVENT_TRUST_SCORE_CHANGED,
     EVENT_POLICY_EVALUATED,
     EVENT_POLICY_VIOLATED,
+    EVENT_AUTHORITY_RESOLVED,
     EVENT_AGENT_REGISTERED,
     EVENT_AGENT_REVOKED,
     EVENT_AUDIT_ENTRY,

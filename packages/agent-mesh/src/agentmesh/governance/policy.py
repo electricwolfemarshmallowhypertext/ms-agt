@@ -293,6 +293,9 @@ class PolicyDecision(BaseModel):
     evaluated_at: datetime = Field(default_factory=datetime.utcnow)
     evaluation_ms: Optional[float] = None
 
+    # Extension metadata (e.g., authority resolver details)
+    metadata: Optional[dict] = Field(default=None, description="Additional decision context from resolvers")
+
 
 class PolicyEngine:
     """
@@ -328,6 +331,7 @@ class PolicyEngine:
         self._rate_limits: dict[str, dict] = {}  # rule_name -> {count, reset_at}
         self._rego_evaluators: list[tuple[str, Any]] = []  # [(package, OPAEvaluator)]
         self._cedar_evaluators: list[Any] = []  # [CedarEvaluator]
+        self._authority_resolver: Any = None  # AuthorityResolver protocol
         self._conflict_strategy = ConflictResolutionStrategy(conflict_strategy)
         self._resolver = PolicyConflictResolver(self._conflict_strategy)
 
@@ -365,6 +369,21 @@ class PolicyEngine:
         policy = Policy.from_json(json_content)
         self.load_policy(policy)
         return policy
+
+    def set_authority_resolver(self, resolver: Any) -> None:
+        """Register an ``AuthorityResolver`` for reputation-gated authority.
+
+        The resolver is called during evaluation after YAML/JSON rule
+        matching and before OPA/Cedar policies. It can narrow
+        capabilities, apply spend limits, or deny the action based on
+        trust scoring and delegation chain context.
+
+        Args:
+            resolver: An object implementing the ``AuthorityResolver``
+                protocol (i.e., has a ``resolve(AuthorityRequest) ->
+                AuthorityDecision`` method).
+        """
+        self._authority_resolver = resolver
 
     def _apply_rule(self, rule: PolicyRule, policy: Policy, context: Optional[dict] = None) -> PolicyDecision:
         """Apply a matched rule and generate actionable error messages."""
@@ -671,7 +690,62 @@ class PolicyEngine:
                     evaluation_ms=elapsed,
                 )
 
-        # 2. Check Rego policies
+        # 2. Authority resolution (trust-based narrowing)
+        if self._authority_resolver is not None:
+            from agentmesh.governance.authority import (
+                ActionRequest,
+                AuthorityRequest,
+                DelegationInfo,
+                TrustInfo,
+            )
+            delegation_info = DelegationInfo(
+                agent_did=agent_did,
+                delegated_capabilities=context.get("capabilities", []),
+            )
+            trust_info = TrustInfo(
+                score=context.get("trust_score", 500),
+                risk_level=context.get("risk_level", "medium"),
+            )
+            action_info = ActionRequest(
+                action_type=context.get("action", {}).get("type", "unknown")
+                if isinstance(context.get("action"), dict)
+                else context.get("tool_name", "unknown"),
+                tool_name=context.get("tool_name"),
+                resource=context.get("resource"),
+                requested_spend=context.get("requested_spend"),
+            )
+            authority_req = AuthorityRequest(
+                delegation=delegation_info,
+                trust=trust_info,
+                action=action_info,
+                context=context,
+            )
+            authority_decision = self._authority_resolver.resolve(authority_req)
+            if authority_decision.decision == "deny":
+                elapsed = (datetime.utcnow() - start).total_seconds() * 1000
+                return PolicyDecision(
+                    allowed=False,
+                    action="deny",
+                    reason=f"Authority resolver denied: {authority_decision.narrowing_reason or 'trust check failed'}",
+                    evaluated_at=start,
+                    evaluation_ms=elapsed,
+                )
+            if authority_decision.decision == "allow_narrowed":
+                elapsed = (datetime.utcnow() - start).total_seconds() * 1000
+                return PolicyDecision(
+                    allowed=True,
+                    action="allow",
+                    reason=f"Authority resolver narrowed: {authority_decision.narrowing_reason}",
+                    evaluated_at=start,
+                    evaluation_ms=elapsed,
+                    metadata={
+                        "effective_scope": authority_decision.effective_scope,
+                        "effective_spend_limit": authority_decision.effective_spend_limit,
+                        "trust_tier": authority_decision.trust_tier,
+                    },
+                )
+
+        # 3. Check Rego policies
         for package, evaluator in self._rego_evaluators:
             query = f"data.{package}.allow"
             opa_result = evaluator.evaluate(query, context)
@@ -685,7 +759,7 @@ class PolicyEngine:
                     evaluation_ms=elapsed,
                 )
 
-        # 3. Check Cedar policies
+        # 4. Check Cedar policies
         for cedar_eval in self._cedar_evaluators:
             # Map context to Cedar action
             action_name = context.get("action", {}).get("type", context.get("tool_name", "unknown"))
@@ -701,7 +775,7 @@ class PolicyEngine:
                     evaluation_ms=elapsed,
                 )
 
-        # 4. No rules matched - use default
+        # 5. No rules matched - use default
         if applicable:
             default = applicable[0].default_action
         else:
