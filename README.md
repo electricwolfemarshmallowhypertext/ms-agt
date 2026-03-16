@@ -13,6 +13,8 @@
 
 Runtime governance for AI agents — the only toolkit covering all **10 OWASP Agentic risks** with **6,100+ tests**. Governs what agents *do*, not just what they say — deterministic policy enforcement, zero-trust identity, execution sandboxing, and SRE — **Python · TypeScript · .NET**
 
+> **Works with any stack** — AWS Bedrock, Google ADK, Azure AI, LangChain, CrewAI, AutoGen, OpenAI Agents, LlamaIndex, and more. Pure `pip install` with zero vendor lock-in.
+
 ## 📋 Getting Started
 
 ### 📦 Installation
@@ -53,6 +55,7 @@ pip install agent-lightning        # RL training governance
 - **[.NET SDK](packages/agent-governance-dotnet/README.md)** — NuGet package with full OWASP coverage
 - **[Tutorials](docs/tutorials/)** — Step-by-step guides for policy, identity, integrations, compliance, SRE, and sandboxing
 - **[Azure Deployment](docs/deployment/README.md)** — AKS, Azure AI Foundry, Container Apps, OpenClaw sidecar
+- **[NVIDIA OpenShell Integration](docs/integrations/openshell.md)** — Combine sandbox isolation with governance intelligence
 - **[OWASP Compliance](docs/OWASP-COMPLIANCE.md)** — Full ASI-01 through ASI-10 mapping
 - **[Architecture](docs/ARCHITECTURE.md)** — System design, security model, trust scoring
 - **[NIST RFI Mapping](docs/nist-rfi-mapping.md)** — Mapping to NIST AI Agent Security RFI (2026-00206)
