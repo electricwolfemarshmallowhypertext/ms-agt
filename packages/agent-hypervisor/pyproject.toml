@@ -10,7 +10,10 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 authors = [
-    {name = "Imran Siddique", email = "agt@microsoft.com"},
+    {name = "Microsoft Corporation", email = "agt@microsoft.com"},
+]
+maintainers = [
+    {name = "Agent Governance Toolkit Team", email = "agt@microsoft.com"},
 ]
 keywords = [
     "ai", "agents", "hypervisor", "trust", "multi-agent",
@@ -21,6 +24,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3",

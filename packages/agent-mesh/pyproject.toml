@@ -9,7 +9,10 @@ description = "Community Edition — The Secure Nervous System for Cloud-Native 
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Imran Siddique", email = "agt@microsoft.com"}
+    {name = "Microsoft Corporation", email = "agt@microsoft.com"},
+]
+maintainers = [
+    {name = "Agent Governance Toolkit Team", email = "agt@microsoft.com"},
 ]
 keywords = [
     "ai",
@@ -31,7 +34,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
-    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
