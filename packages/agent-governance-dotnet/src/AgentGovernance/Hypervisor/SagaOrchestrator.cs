@@ -31,11 +31,17 @@ public enum SagaState
 /// </summary>
 public enum StepState
 {
+    /// <summary>Step has not started.</summary>
     Pending,
+    /// <summary>Step is currently executing.</summary>
     Executing,
+    /// <summary>Step completed successfully.</summary>
     Committed,
+    /// <summary>Step execution failed.</summary>
     Failed,
+    /// <summary>Step was rolled back by its compensating action.</summary>
     Compensated,
+    /// <summary>Compensation itself failed, requiring manual intervention.</summary>
     CompensationFailed
 }
 
@@ -44,11 +50,17 @@ public enum StepState
 /// </summary>
 public sealed class SagaStep
 {
+    /// <summary>Unique identifier for this saga step action.</summary>
     public required string ActionId { get; init; }
+    /// <summary>DID of the agent executing this step.</summary>
     public required string AgentDid { get; init; }
+    /// <summary>Current execution state of this step.</summary>
     public StepState State { get; internal set; } = StepState.Pending;
+    /// <summary>Error message if the step failed or compensation failed.</summary>
     public string? Error { get; internal set; }
+    /// <summary>Maximum retry attempts before marking the step as failed.</summary>
     public int MaxRetries { get; init; } = 1;
+    /// <summary>Timeout for executing this step before it is cancelled.</summary>
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
@@ -70,10 +82,15 @@ public sealed class SagaStep
 /// </summary>
 public sealed class Saga
 {
+    /// <summary>Unique identifier for this saga instance.</summary>
     public string Id { get; } = Guid.NewGuid().ToString("N")[..12];
+    /// <summary>Current aggregate state of the saga transaction.</summary>
     public SagaState State { get; internal set; } = SagaState.Pending;
+    /// <summary>Ordered list of steps in this saga.</summary>
     public List<SagaStep> Steps { get; } = new();
+    /// <summary>Action IDs of steps whose compensation failed during rollback.</summary>
     public List<string> FailedCompensations { get; } = new();
+    /// <summary>UTC timestamp when this saga was created.</summary>
     public DateTime CreatedUtc { get; } = DateTime.UtcNow;
 
     /// <summary>

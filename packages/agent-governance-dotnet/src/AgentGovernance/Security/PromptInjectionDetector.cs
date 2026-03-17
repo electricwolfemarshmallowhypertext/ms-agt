@@ -41,10 +41,15 @@ public enum InjectionType
 /// </summary>
 public enum ThreatLevel
 {
+    /// <summary>No threat detected.</summary>
     None = 0,
+    /// <summary>Minor suspicious pattern, unlikely to be an attack.</summary>
     Low = 1,
+    /// <summary>Moderate threat that warrants review.</summary>
     Medium = 2,
+    /// <summary>High-confidence injection attempt.</summary>
     High = 3,
+    /// <summary>Critical attack pattern requiring immediate blocking.</summary>
     Critical = 4
 }
 

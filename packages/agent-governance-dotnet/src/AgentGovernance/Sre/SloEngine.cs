@@ -52,8 +52,11 @@ public sealed class SliSpec
 /// </summary>
 public enum BurnRateSeverity
 {
+    /// <summary>Elevated burn rate that should be investigated.</summary>
     Warning,
+    /// <summary>Dangerously high burn rate requiring immediate attention.</summary>
     Critical,
+    /// <summary>Extreme burn rate triggering on-call page.</summary>
     Page
 }
 
@@ -84,6 +87,7 @@ public sealed class BurnRateThreshold
 /// </summary>
 public sealed class ErrorBudgetPolicy
 {
+    /// <summary>Burn rate thresholds that trigger alerts at different severity levels.</summary>
     public List<BurnRateThreshold> Thresholds { get; init; } = new();
 }
 

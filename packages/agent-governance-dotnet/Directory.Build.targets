@@ -1,0 +1,6 @@
+<Project>
+  <!-- Evaluated after project properties, so IsPackable is available -->
+  <PropertyGroup Condition="'$(IsPackable)' != 'false'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

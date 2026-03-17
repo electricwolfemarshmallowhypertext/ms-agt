@@ -40,6 +40,10 @@ public sealed class CircuitBreakerOpenException : Exception
     /// <summary>Estimated time until the circuit breaker transitions to HalfOpen.</summary>
     public TimeSpan RetryAfter { get; }
 
+    /// <summary>
+    /// Initializes a new instance with the estimated retry delay.
+    /// </summary>
+    /// <param name="retryAfter">Time until the circuit transitions to half-open.</param>
     public CircuitBreakerOpenException(TimeSpan retryAfter)
         : base($"Circuit breaker is open. Retry after {retryAfter.TotalSeconds:F0}s.")
     {
