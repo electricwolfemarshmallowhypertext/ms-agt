@@ -180,7 +180,7 @@ class PluginInstaller:
             dest = self._plugins_dir / dep_name
             if dest.exists():
                 continue  # already installed
-            self.install(dep_name, dep_version, verify=False, _seen=_seen)
+            self.install(dep_name, dep_version, verify=True, _seen=_seen)
 
     # ------------------------------------------------------------------
     # Sandboxing

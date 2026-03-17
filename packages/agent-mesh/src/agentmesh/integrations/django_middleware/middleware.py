@@ -153,14 +153,32 @@ class AgentTrustMiddleware:
     def _evaluate_trust(agent_did: str, agent_sig: str) -> int:
         """Return trust score for the given agent.
 
-        This is a simplified evaluation: agents with a signature receive
-        a score of 750 (trusted); agents without get 400 (standard).
-        Production deployments should plug in ``TrustBridge.verify_peer``
-        or an equivalent async lookup.
+        Verifies the agent's Ed25519 signature over its DID.  The agent
+        must sign the DID string with its private key and send the
+        base64-encoded signature in the signature header.
+
+        The verifying public key is looked up via the Django setting
+        ``AGENTMESH_AGENT_KEYS``, a dict mapping DID → Ed25519PublicKey.
+        Agents not in the registry or with invalid signatures receive a
+        score of 0.
         """
-        if agent_did and agent_sig:
+        if not agent_did or not agent_sig:
+            return 0
+
+        agent_keys: dict = _get_setting("AGENTMESH_AGENT_KEYS", {})
+        public_key = agent_keys.get(agent_did)
+        if public_key is None:
+            logger.warning("No public key registered for agent %s", agent_did)
+            return 0
+
+        import base64
+        try:
+            sig_bytes = base64.b64decode(agent_sig)
+            public_key.verify(sig_bytes, agent_did.encode("utf-8"))
             return 750
-        return 400
+        except Exception:
+            logger.warning("Signature verification failed for agent %s", agent_did)
+            return 0
 
     @staticmethod
     def _resolve_view_func(request: HttpRequest) -> Optional[Callable[..., Any]]:

@@ -364,33 +364,19 @@ class TrustGatedMCPClient:
         Invoke tool on MCP server.
 
         Automatically attaches identity credentials.
+
+        Raises:
+            NotImplementedError: HTTP transport is not yet available.
         """
         if server_url not in self._connected_servers:
             if not await self.connect(server_url):
                 return {"error": "Failed to connect to server"}
 
-        # Build request with identity
-        request = {
-            "jsonrpc": "2.0",
-            "method": "tools/call",
-            "params": {
-                "name": tool_name,
-                "arguments": arguments,
-            },
-            "id": f"req-{datetime.utcnow().timestamp()}",
-            # AgentMesh identity extension
-            "x-agentmesh": {
-                "callerDid": str(self.identity.did) if hasattr(self.identity, "did") else "",
-                "trustScore": self.identity.trust_score if hasattr(self.identity, "trust_score") else 500,
-                "capabilities": list(self.identity.capabilities) if hasattr(self.identity, "capabilities") else [],
-            },
-        }
-
-        logger.debug(f"MCP request to {server_url}: {tool_name}")
-
-        # In real implementation, send HTTP request
-        # For now, return placeholder
-        return {"status": "request_prepared", "request": request}
+        raise NotImplementedError(
+            "MCP HTTP transport is not yet implemented. "
+            f"Cannot send request to {server_url} for tool '{tool_name}'. "
+            "Provide an HTTP transport backend via a subclass or plugin."
+        )
 
     def get_credentials(self) -> Dict[str, Any]:
         """Get identity credentials for MCP authentication."""
