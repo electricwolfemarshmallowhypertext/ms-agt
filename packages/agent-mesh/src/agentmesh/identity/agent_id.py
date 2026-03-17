@@ -8,7 +8,7 @@ Identity persists across restarts; revocation propagates in ≤5s.
 """
 
 from datetime import datetime
-from typing import Optional, Literal
+from typing import ClassVar, Optional, Literal
 from pydantic import BaseModel, Field, field_validator
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
@@ -214,6 +214,9 @@ class AgentIdentity(BaseModel):
             logger.debug("Signature verification failed", exc_info=True)
             return False
 
+    # Maximum delegation depth to prevent Sybil attacks via infinite chains.
+    MAX_DELEGATION_DEPTH: ClassVar[int] = 10
+
     def delegate(
         self,
         name: str,
@@ -239,7 +242,25 @@ class AgentIdentity(BaseModel):
             description: Optional description.
             max_initial_trust_score: Upper bound on the child's initial trust
                 score. Typically set to the parent's current trust score.
+
+        Raises:
+            ValueError: If capabilities are not a subset, delegation depth
+                exceeds MAX_DELEGATION_DEPTH, or wildcard is propagated.
         """
+        # V01: Enforce maximum delegation depth
+        if self.delegation_depth >= self.MAX_DELEGATION_DEPTH:
+            raise ValueError(
+                f"Maximum delegation depth ({self.MAX_DELEGATION_DEPTH}) exceeded. "
+                f"Current depth: {self.delegation_depth}"
+            )
+
+        # V02: Block wildcard capability propagation
+        if "*" in capabilities:
+            raise ValueError(
+                "Cannot delegate wildcard capability '*'. "
+                "Explicitly list the capabilities to delegate."
+            )
+
         # Validate capabilities are a subset
         for cap in capabilities:
             if cap not in self.capabilities:

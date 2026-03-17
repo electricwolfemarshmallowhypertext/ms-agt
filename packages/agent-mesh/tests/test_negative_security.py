@@ -64,30 +64,30 @@ def _setup_handshake():
 class TestDelegationDepthAbuse:
     """Verify delegation depth limits are respected."""
 
-    def test_deep_delegation_chain(self):
-        """An agent can create arbitrarily deep delegation chains.
-        This is a potential Sybil attack vector — each level spawns
-        a new identity with a fresh keypair.
-        """
+    def test_deep_delegation_chain_blocked(self):
+        """Delegation beyond MAX_DELEGATION_DEPTH is rejected."""
         root = _create_agent("root", ["read:data", "write:data"])
         current = root
-        # Create a 20-level deep delegation chain
-        for i in range(20):
+        # Create chain up to the max (10)
+        for i in range(AgentIdentity.MAX_DELEGATION_DEPTH):
             current = current.delegate(
                 name=f"child-{i}",
                 capabilities=["read:data"],
             )
-        assert current.delegation_depth == 20
-        # The child at depth 20 still works — no enforcement
-        assert current.is_active()
+        assert current.delegation_depth == AgentIdentity.MAX_DELEGATION_DEPTH
+        # The next delegation should be rejected
+        with pytest.raises(ValueError, match="Maximum delegation depth"):
+            current.delegate(name="too-deep", capabilities=["read:data"])
 
-    def test_delegated_agent_retains_capabilities(self):
-        """Even at extreme depth, capabilities are preserved."""
+    def test_delegation_at_max_depth_still_works(self):
+        """Delegation at depth MAX-1 succeeds (boundary check)."""
         root = _create_agent("root", ["read:data"])
-        child = root
-        for _ in range(10):
-            child = child.delegate(name="deep", capabilities=["read:data"])
-        assert child.has_capability("read:data")
+        current = root
+        for i in range(AgentIdentity.MAX_DELEGATION_DEPTH - 1):
+            current = current.delegate(name=f"child-{i}", capabilities=["read:data"])
+        # One more should still work (depth == MAX-1 → child depth == MAX)
+        child = current.delegate(name="last", capabilities=["read:data"])
+        assert child.delegation_depth == AgentIdentity.MAX_DELEGATION_DEPTH
 
 
 # ===========================================================================
@@ -110,13 +110,13 @@ class TestWildcardCapabilityBypass:
                 capabilities=["admin:delete-all", "nuclear:launch"],
             )
 
-    def test_wildcard_parent_can_delegate_wildcard(self):
-        """Parent with '*' can delegate '*' itself — this is the only
-        way to pass through the wildcard.
+    def test_wildcard_delegation_blocked(self):
+        """V02: Parent with '*' CANNOT delegate '*' itself —
+        wildcard propagation is explicitly blocked.
         """
         root = _create_agent("root", ["*"])
-        child = root.delegate(name="child", capabilities=["*"])
-        assert child.has_capability("anything:at:all")
+        with pytest.raises(ValueError, match="Cannot delegate wildcard"):
+            root.delegate(name="child", capabilities=["*"])
 
     def test_star_capability_matches_everything(self):
         agent = _create_agent("super", ["*"])

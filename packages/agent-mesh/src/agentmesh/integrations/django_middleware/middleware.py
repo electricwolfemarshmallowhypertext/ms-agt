@@ -70,6 +70,16 @@ class AgentTrustMiddleware:
     def _exempt_paths() -> List[str]:
         return list(_get_setting("AGENTMESH_EXEMPT_PATHS", []))
 
+    @staticmethod
+    def _trusted_proxies() -> List[str]:
+        """Return list of trusted proxy IPs/CIDRs.
+
+        When set, DID headers are only trusted from these source IPs.
+        Empty list (default) means trust headers from any source — set
+        this in production to prevent header spoofing.
+        """
+        return list(_get_setting("AGENTMESH_TRUSTED_PROXIES", []))
+
     # ------------------------------------------------------------------
     # request processing
     # ------------------------------------------------------------------
@@ -79,6 +89,20 @@ class AgentTrustMiddleware:
         for prefix in self._exempt_paths():
             if request.path.startswith(prefix):
                 return self.get_response(request)
+
+        # V17: Validate request comes from a trusted proxy when configured
+        trusted_proxies = self._trusted_proxies()
+        if trusted_proxies:
+            remote_addr = request.META.get("REMOTE_ADDR", "")
+            if remote_addr not in trusted_proxies:
+                logger.warning(
+                    "Rejecting agent DID header from untrusted source: %s",
+                    remote_addr,
+                )
+                return JsonResponse(
+                    {"error": "Untrusted proxy", "detail": "Request source is not in AGENTMESH_TRUSTED_PROXIES."},
+                    status=403,
+                )
 
         did_header = self._did_header()
         sig_header = self._signature_header()

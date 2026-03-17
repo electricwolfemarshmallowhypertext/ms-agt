@@ -95,7 +95,7 @@ class PluginInstaller:
         """
         manifest = self._registry.get_plugin(name, version)
 
-        # Signature verification
+        # Signature verification (first check)
         if verify and manifest.signature and manifest.author in self._trusted_keys:
             public_key = self._trusted_keys[manifest.author]
             verify_signature(manifest, public_key)
@@ -106,8 +106,19 @@ class PluginInstaller:
             _seen = set()
         self._resolve_dependencies(manifest, _seen=_seen)
 
-        # Install to plugins directory
-        dest = self._plugins_dir / name
+        # V29: Re-verify signature after dependency resolution (TOCTOU guard)
+        if verify and manifest.signature and manifest.author in self._trusted_keys:
+            public_key = self._trusted_keys[manifest.author]
+            verify_signature(manifest, public_key)
+
+        # V03: Path traversal guard — ensure dest stays within plugins_dir
+        dest = (self._plugins_dir / name).resolve()
+        plugins_root = self._plugins_dir.resolve()
+        if not str(dest).startswith(str(plugins_root)):
+            raise MarketplaceError(
+                f"Plugin name '{name}' resolves outside plugins directory "
+                f"(path traversal blocked)"
+            )
         dest.mkdir(parents=True, exist_ok=True)
         manifest_file = dest / MANIFEST_FILENAME
         import yaml
