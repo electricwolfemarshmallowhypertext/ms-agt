@@ -268,7 +268,19 @@ class TrustGatedMCPServer:
         # Execute tool
         call.trust_verified = True
         try:
-            result = await tool.handler(**arguments)
+            # V12: Validate arguments against input_schema before dispatch
+            allowed_keys = set(tool.input_schema.get("properties", {}).keys())
+            if allowed_keys:
+                sanitized = {k: v for k, v in arguments.items() if k in allowed_keys}
+                stripped = set(arguments.keys()) - allowed_keys
+                if stripped:
+                    logger.warning(
+                        "Stripped unexpected kwargs from %s call by %s: %s",
+                        tool_name, caller_did, stripped,
+                    )
+            else:
+                sanitized = arguments
+            result = await tool.handler(**sanitized)
             call.success = True
             call.result = result
             tool.total_calls += 1

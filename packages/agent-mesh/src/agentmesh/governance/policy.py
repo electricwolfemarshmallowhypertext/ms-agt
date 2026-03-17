@@ -86,8 +86,16 @@ class PolicyRule(BaseModel):
             # In production, would use a proper expression parser
             return self._eval_expression(self.condition, context)
         except Exception:
-            logger.debug("Policy rule evaluation failed for '%s'", self.name, exc_info=True)
-            return False
+            # V27: Fail-closed — treat evaluation errors as a match so
+            # the rule's action (typically "deny") takes effect. This
+            # prevents attackers from crafting inputs that trigger
+            # exceptions to bypass policy rules.
+            logger.warning(
+                "Policy rule evaluation error for '%s' — treating as MATCH (fail-closed)",
+                self.name,
+                exc_info=True,
+            )
+            return True
 
     def _eval_expression(self, expr: str, context: dict) -> bool:
         """Evaluate a simple expression."""
@@ -779,13 +787,15 @@ class PolicyEngine:
         if applicable:
             default = applicable[0].default_action
         else:
-            default = "allow"  # No policies = default allow
+            # V26: Fail-closed — no policies loaded means deny by default.
+            # Operators must explicitly load an allow policy.
+            default = "deny"
 
         elapsed = (datetime.utcnow() - start).total_seconds() * 1000
         return PolicyDecision(
             allowed=(default == "allow"),
             action=default,
-            reason="No matching rules, using default",
+            reason="No matching rules, using default" if applicable else "No policies loaded (deny by default)",
             evaluated_at=start,
             evaluation_ms=elapsed,
         )
