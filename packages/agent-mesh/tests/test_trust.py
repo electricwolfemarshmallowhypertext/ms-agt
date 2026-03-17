@@ -5,6 +5,7 @@
 import pytest
 from datetime import datetime
 
+from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
 from agentmesh.trust import (
     TrustBridge,
     ProtocolBridge,
@@ -14,6 +15,21 @@ from agentmesh.trust import (
     CapabilityGrant,
     CapabilityRegistry,
 )
+
+
+def _make_identity(name: str, capabilities: list[str] | None = None) -> AgentIdentity:
+    return AgentIdentity.create(
+        name=name,
+        sponsor=f"{name}@test.example.com",
+        capabilities=capabilities or ["read:data", "write:reports"],
+    )
+
+
+def _make_registry(*identities: AgentIdentity) -> IdentityRegistry:
+    registry = IdentityRegistry()
+    for identity in identities:
+        registry.register(identity)
+    return registry
 
 
 class TestTrustBridge:
@@ -41,16 +57,25 @@ class TestTrustBridge:
     
     @pytest.mark.asyncio
     async def test_verify_peer(self):
-        """Test verifying a peer."""
-        bridge = TrustBridge(agent_did="did:mesh:agent-a")
+        """Test verifying a registered peer via TrustBridge."""
+        agent_a = _make_identity("bridge-a")
+        agent_b = _make_identity("bridge-b")
+        registry = _make_registry(agent_a, agent_b)
+
+        bridge = TrustBridge(
+            agent_did=str(agent_a.did),
+            identity=agent_a,
+            registry=registry,
+            default_trust_threshold=500,
+        )
         
-        # Verification requires network, so this tests the flow
         result = await bridge.verify_peer(
-            peer_did="did:mesh:agent-b",
+            peer_did=str(agent_b.did),
             protocol="iatp",
         )
         
         assert isinstance(result, HandshakeResult)
+        assert result.verified
 
 
 class TestProtocolBridge:
@@ -105,17 +130,24 @@ class TestTrustHandshake:
     
     @pytest.mark.asyncio
     async def test_handshake_initiate(self):
-        """Test initiating a handshake."""
+        """Test initiating a handshake with a registered peer."""
+        agent_a = _make_identity("hs-a")
+        agent_b = _make_identity("hs-b")
+        registry = _make_registry(agent_a, agent_b)
+
         handshake = TrustHandshake(
-            agent_did="did:mesh:agent-a",
+            agent_did=str(agent_a.did),
+            identity=agent_a,
+            registry=registry,
         )
         
         result = await handshake.initiate(
-            peer_did="did:mesh:agent-b",
+            peer_did=str(agent_b.did),
             required_trust_score=500,
         )
         
         assert isinstance(result, HandshakeResult)
+        assert result.verified
 
 
 class TestHandshakeResult:

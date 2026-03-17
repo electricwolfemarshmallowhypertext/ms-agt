@@ -3,19 +3,25 @@
 """
 Trust Handshake
 
-Simple nonce-based challenge/response handshake.
+Ed25519 challenge/response handshake with registry-backed identity verification.
 """
 
 from datetime import datetime, timedelta
 from typing import Any, Optional, Literal
 from pydantic import BaseModel, Field
-import hashlib
+import logging
 import secrets
 import asyncio
-from agentmesh.constants import TIER_TRUSTED_THRESHOLD, TIER_VERIFIED_PARTNER_THRESHOLD
-from agentmesh.identity.agent_id import AgentIdentity
+from agentmesh.constants import (
+    TIER_TRUSTED_THRESHOLD,
+    TIER_VERIFIED_PARTNER_THRESHOLD,
+    TRUST_SCORE_DEFAULT,
+)
+from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
 from agentmesh.identity.delegation import UserContext
 from agentmesh.exceptions import HandshakeError, HandshakeTimeoutError
+
+logger = logging.getLogger(__name__)
 
 
 class HandshakeChallenge(BaseModel):
@@ -51,7 +57,7 @@ class HandshakeResponse(BaseModel):
     capabilities: list[str] = Field(default_factory=list)
     trust_score: int = Field(default=0, ge=0, le=1000)
 
-    # Simple proof (SHA-256 hash of challenge + response)
+    # Ed25519 signature and public key
     signature: str
     public_key: str
 
@@ -149,12 +155,16 @@ class HandshakeResult(BaseModel):
 
 class TrustHandshake:
     """
-    Simple nonce-based trust handshake.
+    Ed25519 challenge/response trust handshake.
 
     Verifies:
-    1. Agent identity (via nonce echo)
-    2. Trust score (threshold check)
-    3. Capabilities (attestation)
+    1. Agent identity (Ed25519 signature over challenge nonce)
+    2. Registry membership (peer must be registered and active)
+    3. Trust score (threshold check)
+    4. Capabilities (attestation)
+
+    Requires an ``IdentityRegistry`` to resolve peer DIDs to their
+    cryptographic identities.  Without a registry, all peers are rejected.
     """
 
     MAX_HANDSHAKE_MS = 200
@@ -165,6 +175,7 @@ class TrustHandshake:
         self,
         agent_did: str,
         identity: Optional[AgentIdentity] = None,
+        registry: Optional[IdentityRegistry] = None,
         cache_ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS,
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     ):
@@ -184,6 +195,7 @@ class TrustHandshake:
             )
         self.agent_did = agent_did
         self.identity = identity
+        self.registry = registry
         self.timeout_seconds = timeout_seconds
         self._pending_challenges: dict[str, HandshakeChallenge] = {}
         self._verified_peers: dict[str, tuple[HandshakeResult, datetime]] = {}
@@ -300,16 +312,27 @@ class TrustHandshake:
         identity: Optional[AgentIdentity] = None,
         user_context: Optional[UserContext] = None,
     ) -> HandshakeResponse:
-        """Respond to a trust handshake challenge with a simple hash proof."""
+        """Respond to a trust handshake challenge with an Ed25519 signature.
+
+        The response payload is signed with the agent's Ed25519 private key.
+        The verifier checks the signature against the agent's registered
+        public key, preventing DID fabrication.
+        """
         if challenge.is_expired():
             raise ValueError("Challenge expired")
 
+        agent_identity = identity or self.identity
+        if not agent_identity:
+            raise HandshakeError(
+                "Identity required for handshake response — "
+                "cannot sign without Ed25519 private key"
+            )
+
         response_nonce = secrets.token_hex(16)
 
-        # Simple SHA-256 proof binding challenge to response
+        # Sign the challenge+response payload with Ed25519
         payload = f"{challenge.challenge_id}:{challenge.nonce}:{response_nonce}:{self.agent_did}"
-        signature = hashlib.sha256(payload.encode()).hexdigest()
-        pub_key = hashlib.sha256(self.agent_did.encode()).hexdigest()
+        signature = agent_identity.sign(payload.encode())
 
         return HandshakeResponse(
             challenge_id=challenge.challenge_id,
@@ -318,7 +341,7 @@ class TrustHandshake:
             capabilities=my_capabilities,
             trust_score=my_trust_score,
             signature=signature,
-            public_key=pub_key,
+            public_key=agent_identity.public_key,
             user_context=user_context.model_dump() if user_context else None,
         )
 
@@ -327,20 +350,42 @@ class TrustHandshake:
         peer_did: str,
         challenge: HandshakeChallenge,
     ) -> Optional[HandshakeResponse]:
-        """Simulate peer response for now."""
-        await asyncio.sleep(0.05)
+        """Resolve peer identity from registry and produce a signed response.
 
-        response_nonce = secrets.token_hex(16)
-        sim_payload = f"{challenge.challenge_id}:{challenge.nonce}:{response_nonce}:{peer_did}"
+        Returns ``None`` (causing handshake failure) when:
+        - No registry is configured
+        - The peer DID is not registered
+        - The peer identity is not active (revoked/suspended/expired)
+        """
+        if not self.registry:
+            logger.warning("Handshake rejected: no IdentityRegistry configured")
+            return None
 
-        return HandshakeResponse(
-            challenge_id=challenge.challenge_id,
-            response_nonce=response_nonce,
+        peer_identity = self.registry.get(peer_did)
+        if not peer_identity:
+            logger.warning("Handshake rejected: unknown peer DID %s", peer_did)
+            return None
+
+        if not peer_identity.is_active():
+            logger.warning(
+                "Handshake rejected: peer %s has status '%s'",
+                peer_did,
+                peer_identity.status,
+            )
+            return None
+
+        # Build the peer's handshake instance with their real identity
+        peer_handshake = TrustHandshake(
             agent_did=peer_did,
-            capabilities=["read:data", "write:reports"],
-            trust_score=750,
-            signature=hashlib.sha256(sim_payload.encode()).hexdigest(),
-            public_key=hashlib.sha256(peer_did.encode()).hexdigest(),
+            identity=peer_identity,
+            registry=self.registry,
+        )
+
+        return await peer_handshake.respond(
+            challenge=challenge,
+            my_capabilities=peer_identity.capabilities,
+            my_trust_score=TRUST_SCORE_DEFAULT,
+            identity=peer_identity,
         )
 
     async def _verify_response(
@@ -350,18 +395,48 @@ class TrustHandshake:
         required_score: int,
         required_capabilities: Optional[list[str]],
     ) -> dict:
-        """Verify handshake response: challenge ID, nonce hash, score, capabilities."""
+        """Verify handshake response with Ed25519 signature verification.
+
+        Checks performed in order:
+        1. Challenge ID matches
+        2. Challenge not expired
+        3. Peer DID is registered and active
+        4. Ed25519 signature is valid
+        5. Public key matches registered identity
+        6. Trust score meets threshold
+        7. Required capabilities are present
+        """
         if response.challenge_id != challenge.challenge_id:
             return {"valid": False, "reason": "Challenge ID mismatch"}
 
         if challenge.is_expired():
             return {"valid": False, "reason": "Challenge expired"}
 
-        # Verify SHA-256 nonce proof
+        # Look up peer identity for public-key verification
+        if not self.registry:
+            return {"valid": False, "reason": "No identity registry configured"}
+
+        peer_identity = self.registry.get(response.agent_did)
+        if not peer_identity:
+            return {
+                "valid": False,
+                "reason": f"Unknown peer: {response.agent_did}",
+            }
+
+        if not peer_identity.is_active():
+            return {
+                "valid": False,
+                "reason": f"Peer identity is {peer_identity.status}",
+            }
+
+        # Verify Ed25519 signature over the challenge payload
         payload = f"{response.challenge_id}:{challenge.nonce}:{response.response_nonce}:{response.agent_did}"
-        expected = hashlib.sha256(payload.encode()).hexdigest()
-        if response.signature != expected:
-            return {"valid": False, "reason": "Signature verification failed"}
+        if not peer_identity.verify_signature(payload.encode(), response.signature):
+            return {"valid": False, "reason": "Ed25519 signature verification failed"}
+
+        # Verify public key matches the registered identity
+        if response.public_key != peer_identity.public_key:
+            return {"valid": False, "reason": "Public key mismatch with registered identity"}
 
         if response.trust_score < required_score:
             return {

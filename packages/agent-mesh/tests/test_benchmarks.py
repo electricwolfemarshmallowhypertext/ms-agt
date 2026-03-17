@@ -19,7 +19,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from agentmesh.identity.agent_id import AgentDID, AgentIdentity
+from agentmesh.identity.agent_id import AgentDID, AgentIdentity, IdentityRegistry
 from agentmesh.trust.handshake import TrustHandshake
 
 # Mark every test in this module as a benchmark
@@ -110,10 +110,15 @@ class TestCryptoBenchmarks:
         """Benchmark full handshake between two agents (<10 ms target)."""
         agent_a = _make_identity("hs-a")
         agent_b = _make_identity("hs-b")
+        registry = IdentityRegistry()
+        registry.register(agent_a)
+        registry.register(agent_b)
 
         times: list[float] = []
         for _ in range(ITERATIONS):
-            hs = TrustHandshake(agent_did=str(agent_a.did), identity=agent_a)
+            hs = TrustHandshake(
+                agent_did=str(agent_a.did), identity=agent_a, registry=registry,
+            )
             start = time.perf_counter()
             result = await hs.initiate(
                 peer_did=str(agent_b.did),
@@ -130,9 +135,8 @@ class TestCryptoBenchmarks:
             f"\nHandshake: mean={mean_ms:.1f} ms, median={median_ms:.1f} ms "
             f"({ITERATIONS} iters)"
         )
-        # The handshake has a simulated 50 ms network delay, so set a
-        # realistic upper bound of 200 ms.  Without the simulated delay
-        # the crypto portion targets <10 ms.
+        # The crypto portion targets <10 ms; allow a realistic
+        # upper bound of 200 ms for slow CI.
         assert mean_ms < 200
 
     def test_identity_creation(self):

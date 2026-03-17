@@ -1313,55 +1313,89 @@ class TestHandshakeResult:
 class TestTrustHandshake:
     @pytest.mark.asyncio
     async def test_initiate(self):
-        th = TrustHandshake(agent_did="did:mesh:me")
-        result = await th.initiate("did:mesh:peer", required_trust_score=700)
+        from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
+        me = AgentIdentity.create(name="me", sponsor="me@test.com", capabilities=["read:data", "write:reports"])
+        peer = AgentIdentity.create(name="peer", sponsor="peer@test.com", capabilities=["read:data", "write:reports"])
+        registry = IdentityRegistry()
+        registry.register(me)
+        registry.register(peer)
+        th = TrustHandshake(agent_did=str(me.did), identity=me, registry=registry)
+        result = await th.initiate(str(peer.did), required_trust_score=500)
         assert result.verified is True
-        assert result.peer_did == "did:mesh:peer"
+        assert result.peer_did == str(peer.did)
 
     @pytest.mark.asyncio
     async def test_initiate_cached(self):
-        th = TrustHandshake(agent_did="did:mesh:me")
-        r1 = await th.initiate("did:mesh:peer", required_trust_score=700)
-        r2 = await th.initiate("did:mesh:peer", required_trust_score=700, use_cache=True)
+        from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
+        me = AgentIdentity.create(name="me-c", sponsor="me@test.com", capabilities=["read:data"])
+        peer = AgentIdentity.create(name="peer-c", sponsor="peer@test.com", capabilities=["read:data"])
+        registry = IdentityRegistry()
+        registry.register(me)
+        registry.register(peer)
+        th = TrustHandshake(agent_did=str(me.did), identity=me, registry=registry)
+        r1 = await th.initiate(str(peer.did), required_trust_score=500)
+        r2 = await th.initiate(str(peer.did), required_trust_score=500, use_cache=True)
         assert r2 is r1  # Same cached result
 
     @pytest.mark.asyncio
     async def test_initiate_no_cache(self):
-        th = TrustHandshake(agent_did="did:mesh:me")
-        r1 = await th.initiate("did:mesh:peer", required_trust_score=700)
-        r2 = await th.initiate("did:mesh:peer", required_trust_score=700, use_cache=False)
+        from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
+        me = AgentIdentity.create(name="me-nc", sponsor="me@test.com", capabilities=["read:data"])
+        peer = AgentIdentity.create(name="peer-nc", sponsor="peer@test.com", capabilities=["read:data"])
+        registry = IdentityRegistry()
+        registry.register(me)
+        registry.register(peer)
+        th = TrustHandshake(agent_did=str(me.did), identity=me, registry=registry)
+        r1 = await th.initiate(str(peer.did), required_trust_score=500)
+        r2 = await th.initiate(str(peer.did), required_trust_score=500, use_cache=False)
         assert r2 is not r1
 
     @pytest.mark.asyncio
     async def test_initiate_score_too_low(self):
-        th = TrustHandshake(agent_did="did:mesh:me")
-        result = await th.initiate("did:mesh:peer", required_trust_score=900)
+        from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
+        me = AgentIdentity.create(name="me-sl", sponsor="me@test.com", capabilities=["read:data"])
+        peer = AgentIdentity.create(name="peer-sl", sponsor="peer@test.com", capabilities=["read:data"])
+        registry = IdentityRegistry()
+        registry.register(me)
+        registry.register(peer)
+        th = TrustHandshake(agent_did=str(me.did), identity=me, registry=registry)
+        result = await th.initiate(str(peer.did), required_trust_score=900)
         assert result.verified is False
 
     @pytest.mark.asyncio
     async def test_initiate_missing_capabilities(self):
-        th = TrustHandshake(agent_did="did:mesh:me")
+        from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
+        me = AgentIdentity.create(name="me-mc", sponsor="me@test.com", capabilities=["read:data"])
+        peer = AgentIdentity.create(name="peer-mc", sponsor="peer@test.com", capabilities=["read:data"])
+        registry = IdentityRegistry()
+        registry.register(me)
+        registry.register(peer)
+        th = TrustHandshake(agent_did=str(me.did), identity=me, registry=registry)
         result = await th.initiate(
-            "did:mesh:peer", required_trust_score=500,
+            str(peer.did), required_trust_score=500,
             required_capabilities=["admin:*"]
         )
         assert result.verified is False
 
     @pytest.mark.asyncio
     async def test_respond(self):
-        th = TrustHandshake(agent_did="did:mesh:me")
+        from agentmesh.identity.agent_id import AgentIdentity
+        me = AgentIdentity.create(name="me-r", sponsor="me@test.com", capabilities=["read:data"])
+        th = TrustHandshake(agent_did=str(me.did), identity=me)
         challenge = HandshakeChallenge.generate()
-        resp = await th.respond(challenge, ["read:data"], 750)
-        assert resp.agent_did == "did:mesh:me"
+        resp = await th.respond(challenge, ["read:data"], 750, identity=me)
+        assert resp.agent_did == str(me.did)
         assert resp.challenge_id == challenge.challenge_id
 
     @pytest.mark.asyncio
     async def test_respond_expired(self):
-        th = TrustHandshake(agent_did="did:mesh:me")
+        from agentmesh.identity.agent_id import AgentIdentity
+        me = AgentIdentity.create(name="me-re", sponsor="me@test.com", capabilities=["read:data"])
+        th = TrustHandshake(agent_did=str(me.did), identity=me)
         challenge = HandshakeChallenge.generate()
         challenge.timestamp = datetime.utcnow() - timedelta(seconds=60)
         with pytest.raises(ValueError, match="expired"):
-            await th.respond(challenge, ["read:data"], 750)
+            await th.respond(challenge, ["read:data"], 750, identity=me)
 
     def test_create_challenge(self):
         th = TrustHandshake(agent_did="did:mesh:me")
@@ -1793,57 +1827,87 @@ from agentmesh.trust.bridge import TrustBridge, ProtocolBridge, PeerInfo
 
 
 class TestTrustBridge:
+    def _make_bridge(self):
+        from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
+        me = AgentIdentity.create(name="bridge-me", sponsor="me@test.com", capabilities=["read:data", "write:reports"])
+        peer = AgentIdentity.create(name="bridge-peer", sponsor="peer@test.com", capabilities=["read:data", "write:reports"])
+        registry = IdentityRegistry()
+        registry.register(me)
+        registry.register(peer)
+        bridge = TrustBridge(
+            agent_did=str(me.did), identity=me, registry=registry,
+            default_trust_threshold=500,
+        )
+        return bridge, me, peer
+
     @pytest.mark.asyncio
     async def test_verify_peer(self):
-        bridge = TrustBridge(agent_did="did:mesh:me")
-        result = await bridge.verify_peer("did:mesh:peer")
+        bridge, me, peer = self._make_bridge()
+        result = await bridge.verify_peer(str(peer.did))
         assert result.verified is True
-        assert "did:mesh:peer" in bridge.peers
+        assert str(peer.did) in bridge.peers
 
     @pytest.mark.asyncio
     async def test_is_peer_trusted_unknown(self):
-        bridge = TrustBridge(agent_did="did:mesh:me")
+        bridge, me, peer = self._make_bridge()
         assert await bridge.is_peer_trusted("did:mesh:unknown") is False
 
     @pytest.mark.asyncio
     async def test_is_peer_trusted_after_verify(self):
-        bridge = TrustBridge(agent_did="did:mesh:me")
-        await bridge.verify_peer("did:mesh:peer")
-        assert await bridge.is_peer_trusted("did:mesh:peer") is True
+        bridge, me, peer = self._make_bridge()
+        await bridge.verify_peer(str(peer.did))
+        assert await bridge.is_peer_trusted(str(peer.did)) is True
 
     def test_get_peer(self):
-        bridge = TrustBridge(agent_did="did:mesh:me")
+        bridge, me, peer = self._make_bridge()
         assert bridge.get_peer("did:mesh:nope") is None
 
     @pytest.mark.asyncio
     async def test_get_trusted_peers(self):
-        bridge = TrustBridge(agent_did="did:mesh:me")
-        await bridge.verify_peer("did:mesh:peer")
+        bridge, me, peer = self._make_bridge()
+        await bridge.verify_peer(str(peer.did))
         trusted = bridge.get_trusted_peers()
         assert len(trusted) == 1
 
     @pytest.mark.asyncio
     async def test_revoke_peer_trust(self):
-        bridge = TrustBridge(agent_did="did:mesh:me")
-        await bridge.verify_peer("did:mesh:peer")
-        assert await bridge.revoke_peer_trust("did:mesh:peer", "bad") is True
+        bridge, me, peer = self._make_bridge()
+        await bridge.verify_peer(str(peer.did))
+        assert await bridge.revoke_peer_trust(str(peer.did), "bad") is True
         assert await bridge.revoke_peer_trust("did:mesh:nope", "bad") is False
 
 
 class TestProtocolBridge:
     @pytest.mark.asyncio
     async def test_send_message(self):
-        pb = ProtocolBridge(agent_did="did:mesh:me")
-        await pb.trust_bridge.verify_peer("did:mesh:peer")
-        result = await pb.send_message("did:mesh:peer", {"data": 1}, "a2a")
+        from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
+        me = AgentIdentity.create(name="pb-me", sponsor="me@test.com", capabilities=["read:data"])
+        peer = AgentIdentity.create(name="pb-peer", sponsor="peer@test.com", capabilities=["read:data"])
+        registry = IdentityRegistry()
+        registry.register(me)
+        registry.register(peer)
+        pb = ProtocolBridge(
+            agent_did=str(me.did), identity=me, registry=registry,
+        )
+        pb.trust_bridge.default_trust_threshold = 500
+        await pb.trust_bridge.verify_peer(str(peer.did))
+        result = await pb.send_message(str(peer.did), {"data": 1}, "a2a")
         assert result["status"] == "sent"
 
     @pytest.mark.asyncio
     async def test_send_message_untrusted(self):
-        pb = ProtocolBridge(agent_did="did:mesh:me")
-        # Peer's simulated trust score is 750, required 700 by default
-        # This should auto-verify and succeed
-        result = await pb.send_message("did:mesh:peer", {"data": 1}, "a2a")
+        from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
+        me = AgentIdentity.create(name="pb-me2", sponsor="me@test.com", capabilities=["read:data"])
+        peer = AgentIdentity.create(name="pb-peer2", sponsor="peer@test.com", capabilities=["read:data"])
+        registry = IdentityRegistry()
+        registry.register(me)
+        registry.register(peer)
+        pb = ProtocolBridge(
+            agent_did=str(me.did), identity=me, registry=registry,
+        )
+        pb.trust_bridge.default_trust_threshold = 500
+        # Should auto-verify via the registry and succeed
+        result = await pb.send_message(str(peer.did), {"data": 1}, "a2a")
         assert result["status"] == "sent"
 
     @pytest.mark.asyncio

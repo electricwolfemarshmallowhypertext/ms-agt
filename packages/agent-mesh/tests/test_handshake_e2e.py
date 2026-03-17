@@ -29,6 +29,15 @@ def _make_identity(name: str) -> AgentIdentity:
     )
 
 
+def _make_registry(*identities: AgentIdentity):
+    """Create a registry pre-populated with identities."""
+    from agentmesh.identity.agent_id import IdentityRegistry
+    registry = IdentityRegistry()
+    for identity in identities:
+        registry.register(identity)
+    return registry
+
+
 async def _mutual_handshake(
     a: AgentIdentity,
     b: AgentIdentity,
@@ -38,8 +47,10 @@ async def _mutual_handshake(
 
     Returns (result_a_sees_b, result_b_sees_a).
     """
-    hs_a = TrustHandshake(agent_did=str(a.did), identity=a)
-    hs_b = TrustHandshake(agent_did=str(b.did), identity=b)
+    registry = _make_registry(a, b)
+
+    hs_a = TrustHandshake(agent_did=str(a.did), identity=a, registry=registry)
+    hs_b = TrustHandshake(agent_did=str(b.did), identity=b, registry=registry)
 
     result_ab = await hs_a.initiate(
         peer_did=str(b.did),

@@ -16,7 +16,7 @@ import tracemalloc
 
 import pytest
 
-from agentmesh.identity.agent_id import AgentIdentity
+from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
 from agentmesh.trust.handshake import TrustHandshake
 
 NUM_AGENTS = 100
@@ -37,9 +37,12 @@ def _make_identity(name: str) -> AgentIdentity:
 async def _single_handshake(
     initiator: AgentIdentity,
     peer: AgentIdentity,
+    registry=None,
 ) -> float:
     """Run one handshake and return elapsed time in seconds."""
-    hs = TrustHandshake(agent_did=str(initiator.did), identity=initiator)
+    hs = TrustHandshake(
+        agent_did=str(initiator.did), identity=initiator, registry=registry,
+    )
     start = time.perf_counter()
     result = await hs.initiate(
         peer_did=str(peer.did),
@@ -80,12 +83,18 @@ class TestConcurrentHandshakes:
         # Use a fixed "server" agent that every agent handshakes with
         server = _make_identity("server-agent")
 
+        # Build a shared registry containing all agents + server
+        registry = IdentityRegistry()
+        registry.register(server)
+        for agent in agents:
+            registry.register(agent)
+
         # 2. Run handshakes concurrently
         tracemalloc.start()
         wall_start = time.perf_counter()
 
         latencies = await asyncio.gather(
-            *[_single_handshake(agent, server) for agent in agents]
+            *[_single_handshake(agent, server, registry=registry) for agent in agents]
         )
 
         wall_elapsed = time.perf_counter() - wall_start
@@ -124,8 +133,15 @@ class TestConcurrentHandshakes:
         agents = [_make_identity(f"v-agent-{i}") for i in range(NUM_AGENTS)]
         server = _make_identity("v-server")
 
+        registry = IdentityRegistry()
+        registry.register(server)
+        for agent in agents:
+            registry.register(agent)
+
         async def _check(agent: AgentIdentity) -> bool:
-            hs = TrustHandshake(agent_did=str(agent.did), identity=agent)
+            hs = TrustHandshake(
+                agent_did=str(agent.did), identity=agent, registry=registry,
+            )
             result = await hs.initiate(
                 peer_did=str(server.did),
                 required_trust_score=500,

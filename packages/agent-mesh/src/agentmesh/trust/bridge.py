@@ -24,6 +24,13 @@ except ImportError:
     IATPClient = None
     NexusClient = None
 
+# Optional import — IdentityRegistry may not be available in all envs
+try:
+    from agentmesh.identity.agent_id import AgentIdentity, IdentityRegistry
+except ImportError:  # pragma: no cover
+    AgentIdentity = None  # type: ignore[assignment,misc]
+    IdentityRegistry = None  # type: ignore[assignment,misc]
+
 
 class PeerInfo(BaseModel):
     """Information about a peer agent in the trust mesh.
@@ -77,8 +84,16 @@ class TrustBridge(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
     def __init__(self, **data):
+        identity = data.pop("identity", None)
+        registry = data.pop("registry", None)
         super().__init__(**data)
-        self._handshake = TrustHandshake(agent_did=self.agent_did)
+        self._identity = identity
+        self._registry = registry
+        self._handshake = TrustHandshake(
+            agent_did=self.agent_did,
+            identity=identity,
+            registry=registry,
+        )
 
     async def verify_peer(
         self,
@@ -161,9 +176,17 @@ class ProtocolBridge(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
 
     def __init__(self, **data):
+        identity = data.pop("identity", None)
+        registry = data.pop("registry", None)
         super().__init__(**data)
+        self._identity = identity
+        self._registry = registry
         if not self.trust_bridge:
-            self.trust_bridge = TrustBridge(agent_did=self.agent_did)
+            self.trust_bridge = TrustBridge(
+                agent_did=self.agent_did,
+                identity=identity,
+                registry=registry,
+            )
 
     async def send_message(
         self,
