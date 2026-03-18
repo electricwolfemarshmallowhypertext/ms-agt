@@ -118,6 +118,11 @@ class TrustGatedMCPServer:
         self._verification_ttl = timedelta(minutes=10)
         self._max_verified_clients = 10_000
 
+        # P10: Circuit breaker — track consecutive failures per tool
+        self._tool_failures: Dict[str, int] = {}
+        self._circuit_breaker_threshold = 5  # open circuit after 5 consecutive failures
+        self._circuit_breaker_reset = timedelta(minutes=1)
+
     # P05: Maximum tool description length to prevent prompt injection via descriptions
     _MAX_DESCRIPTION_LENGTH = 1000
     # P12: Maximum total size of tool arguments (bytes when serialized)
@@ -312,6 +317,15 @@ class TrustGatedMCPServer:
 
         # Execute tool
         call.trust_verified = True
+
+        # P10: Circuit breaker — reject if tool has too many consecutive failures
+        fail_count = self._tool_failures.get(tool_name, 0)
+        if fail_count >= self._circuit_breaker_threshold:
+            call.error = f"Circuit breaker open: {tool_name} has {fail_count} consecutive failures"
+            call.completed_at = datetime.utcnow()
+            self._record_call(call)
+            return call
+
         try:
             # V12: Validate arguments against input_schema before dispatch
             allowed_keys = set(tool.input_schema.get("properties", {}).keys())
@@ -330,11 +344,15 @@ class TrustGatedMCPServer:
             call.result = result
             tool.total_calls += 1
             tool.last_called = datetime.utcnow()
+            self._tool_failures.pop(tool_name, None)  # reset on success
             logger.info(f"Tool {tool_name} invoked successfully by {caller_did}")
         except Exception as e:
-            call.error = str(e)
+            # P11: Sanitize exception — don't log full message (may contain PII)
+            error_type = type(e).__name__
+            call.error = f"{error_type}: {str(e)[:200]}"
             tool.failed_calls += 1
-            logger.error(f"Tool {tool_name} failed: {e}")
+            self._tool_failures[tool_name] = self._tool_failures.get(tool_name, 0) + 1
+            logger.error("Tool %s failed with %s (caller: %s)", tool_name, error_type, caller_did)
 
         call.completed_at = datetime.utcnow()
         self._record_call(call)

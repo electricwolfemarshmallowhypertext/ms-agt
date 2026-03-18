@@ -605,3 +605,326 @@ class TestTrustBridgeAdversarial:
         bridge = TrustBridge(agent_did=str(agent.did))
         result = await bridge.verify_peer(peer_did="did:mesh:any")
         assert result.verified is False
+
+
+# ===========================================================================
+# P06: Peer record integrity (HMAC tamper detection)
+# ===========================================================================
+
+
+class TestPeerRecordIntegrity:
+    """P06: Verify HMAC guards detect tampered peer records."""
+
+    @pytest.mark.asyncio
+    async def test_tampered_trust_score_rejected(self):
+        """Directly modifying a peer's trust_score should be detected."""
+        agent_a = _create_agent("a")
+        agent_b = _create_agent("b")
+        registry = IdentityRegistry()
+        registry.register(agent_a)
+        registry.register(agent_b)
+        bridge = TrustBridge(
+            agent_did=str(agent_a.did),
+            default_trust_threshold=500,
+            identity=agent_a,
+            registry=registry,
+        )
+        result = await bridge.verify_peer(
+            peer_did=str(agent_b.did), required_trust_score=500,
+        )
+        assert result.verified is True
+
+        # Tamper with the peer's trust score
+        bridge.peers[str(agent_b.did)].trust_score = 9999
+        # is_peer_trusted should now reject the tampered record
+        trusted = await bridge.is_peer_trusted(str(agent_b.did), required_score=500)
+        assert trusted is False
+        # Peer should be removed from peers dict
+        assert str(agent_b.did) not in bridge.peers
+
+    @pytest.mark.asyncio
+    async def test_tampered_capabilities_rejected(self):
+        """Modifying capabilities should fail integrity check."""
+        agent_a = _create_agent("a")
+        agent_b = _create_agent("b", ["read:data"])
+        registry = IdentityRegistry()
+        registry.register(agent_a)
+        registry.register(agent_b)
+        bridge = TrustBridge(
+            agent_did=str(agent_a.did),
+            default_trust_threshold=500,
+            identity=agent_a,
+            registry=registry,
+        )
+        await bridge.verify_peer(
+            peer_did=str(agent_b.did), required_trust_score=500,
+        )
+
+        # Tamper with capabilities
+        bridge.peers[str(agent_b.did)].capabilities = ["admin:all", "root:system"]
+        trusted = await bridge.is_peer_trusted(str(agent_b.did), required_score=500)
+        assert trusted is False
+
+    @pytest.mark.asyncio
+    async def test_untampered_record_passes(self):
+        """Unmodified peer record should pass integrity check."""
+        agent_a = _create_agent("a")
+        agent_b = _create_agent("b")
+        registry = IdentityRegistry()
+        registry.register(agent_a)
+        registry.register(agent_b)
+        bridge = TrustBridge(
+            agent_did=str(agent_a.did),
+            default_trust_threshold=500,
+            identity=agent_a,
+            registry=registry,
+        )
+        await bridge.verify_peer(
+            peer_did=str(agent_b.did), required_trust_score=500,
+        )
+        trusted = await bridge.is_peer_trusted(str(agent_b.did), required_score=500)
+        assert trusted is True
+
+    @pytest.mark.asyncio
+    async def test_missing_signature_rejected(self):
+        """Peer with no stored signature should fail integrity check."""
+        agent_a = _create_agent("a")
+        agent_b = _create_agent("b")
+        registry = IdentityRegistry()
+        registry.register(agent_a)
+        registry.register(agent_b)
+        bridge = TrustBridge(
+            agent_did=str(agent_a.did),
+            default_trust_threshold=500,
+            identity=agent_a,
+            registry=registry,
+        )
+        await bridge.verify_peer(
+            peer_did=str(agent_b.did), required_trust_score=500,
+        )
+        # Delete the stored signature
+        bridge._peer_signatures.pop(str(agent_b.did), None)
+        trusted = await bridge.is_peer_trusted(str(agent_b.did), required_score=500)
+        assert trusted is False
+
+
+# ===========================================================================
+# P07: Agent behavior monitor (rogue agent detection)
+# ===========================================================================
+
+
+class TestAgentBehaviorMonitor:
+    """P07: Rogue agent detection and quarantine."""
+
+    def test_normal_agent_not_quarantined(self):
+        from agentmesh.services.behavior_monitor import AgentBehaviorMonitor
+
+        monitor = AgentBehaviorMonitor()
+        for _ in range(10):
+            monitor.record_tool_call("did:mesh:good", "read_file", success=True)
+        assert monitor.is_quarantined("did:mesh:good") is False
+
+    def test_consecutive_failures_trigger_quarantine(self):
+        from agentmesh.services.behavior_monitor import AgentBehaviorMonitor
+
+        monitor = AgentBehaviorMonitor(consecutive_failure_threshold=5)
+        for _ in range(5):
+            monitor.record_tool_call("did:mesh:failing", "bad_tool", success=False)
+        assert monitor.is_quarantined("did:mesh:failing") is True
+
+    def test_success_resets_consecutive_failures(self):
+        from agentmesh.services.behavior_monitor import AgentBehaviorMonitor
+
+        monitor = AgentBehaviorMonitor(consecutive_failure_threshold=5)
+        for _ in range(4):
+            monitor.record_tool_call("did:mesh:mixed", "tool", success=False)
+        monitor.record_tool_call("did:mesh:mixed", "tool", success=True)
+        # One more failure shouldn't trigger quarantine
+        monitor.record_tool_call("did:mesh:mixed", "tool", success=False)
+        assert monitor.is_quarantined("did:mesh:mixed") is False
+
+    def test_burst_detection_triggers_quarantine(self):
+        from agentmesh.services.behavior_monitor import AgentBehaviorMonitor
+
+        monitor = AgentBehaviorMonitor(
+            burst_threshold=10,
+            burst_window_seconds=60,
+        )
+        for _ in range(11):
+            monitor.record_tool_call("did:mesh:burst", "tool", success=True)
+        assert monitor.is_quarantined("did:mesh:burst") is True
+
+    def test_capability_denial_triggers_quarantine(self):
+        from agentmesh.services.behavior_monitor import AgentBehaviorMonitor
+
+        monitor = AgentBehaviorMonitor(capability_denial_threshold=3)
+        for i in range(3):
+            monitor.record_capability_denial("did:mesh:escalator", f"admin:{i}")
+        assert monitor.is_quarantined("did:mesh:escalator") is True
+
+    def test_release_quarantine(self):
+        from agentmesh.services.behavior_monitor import AgentBehaviorMonitor
+
+        monitor = AgentBehaviorMonitor(consecutive_failure_threshold=2)
+        monitor.record_tool_call("did:mesh:temp", "tool", success=False)
+        monitor.record_tool_call("did:mesh:temp", "tool", success=False)
+        assert monitor.is_quarantined("did:mesh:temp") is True
+        monitor.release_quarantine("did:mesh:temp")
+        assert monitor.is_quarantined("did:mesh:temp") is False
+
+    def test_auto_expire_quarantine(self):
+        from agentmesh.services.behavior_monitor import AgentBehaviorMonitor
+
+        monitor = AgentBehaviorMonitor(
+            consecutive_failure_threshold=2,
+            quarantine_duration=timedelta(seconds=0),
+        )
+        monitor.record_tool_call("did:mesh:auto", "tool", success=False)
+        monitor.record_tool_call("did:mesh:auto", "tool", success=False)
+        # Duration is 0, should auto-expire immediately
+        assert monitor.is_quarantined("did:mesh:auto") is False
+
+    def test_max_tracked_agents_eviction(self):
+        from agentmesh.services.behavior_monitor import AgentBehaviorMonitor
+
+        monitor = AgentBehaviorMonitor(max_tracked_agents=3)
+        for i in range(4):
+            monitor.record_tool_call(f"did:mesh:agent{i}", "tool", success=True)
+        # Oldest agent should be evicted
+        assert len(monitor._agents) == 3
+
+    def test_get_quarantined_agents(self):
+        from agentmesh.services.behavior_monitor import AgentBehaviorMonitor
+
+        monitor = AgentBehaviorMonitor(consecutive_failure_threshold=1)
+        monitor.record_tool_call("did:mesh:bad1", "tool", success=False)
+        monitor.record_tool_call("did:mesh:bad2", "tool", success=False)
+        monitor.record_tool_call("did:mesh:good", "tool", success=True)
+        quarantined = monitor.get_quarantined_agents()
+        dids = {m.agent_did for m in quarantined}
+        assert "did:mesh:bad1" in dids
+        assert "did:mesh:bad2" in dids
+        assert "did:mesh:good" not in dids
+
+
+# ===========================================================================
+# P10: Circuit breaker in MCP
+# ===========================================================================
+
+
+class TestMCPCircuitBreaker:
+    """P10: Circuit breaker stops tool calls after consecutive failures."""
+
+    @pytest.mark.asyncio
+    async def test_circuit_opens_after_threshold_failures(self):
+        from agentmesh.integrations.mcp import TrustGatedMCPServer
+
+        agent = _create_agent("server-agent")
+        server = TrustGatedMCPServer(identity=agent, min_trust_score=0)
+
+        async def failing_handler(**kwargs):
+            raise RuntimeError("service down")
+
+        server.register_tool(
+            name="broken_tool",
+            handler=failing_handler,
+            description="Always fails",
+            input_schema={"properties": {}},
+            min_trust_score=0,
+        )
+        server._circuit_breaker_threshold = 3
+
+        # Fail 3 times to open the circuit
+        for _ in range(3):
+            call = await server.invoke_tool(
+                "broken_tool", {}, "did:mesh:caller",
+                caller_trust_score=500,
+            )
+            assert call.success is not True
+
+        # 4th call should be blocked by circuit breaker
+        call = await server.invoke_tool(
+            "broken_tool", {}, "did:mesh:caller",
+            caller_trust_score=500,
+        )
+        assert call.error is not None
+        assert "Circuit breaker" in call.error
+
+    @pytest.mark.asyncio
+    async def test_circuit_resets_on_success(self):
+        from agentmesh.integrations.mcp import TrustGatedMCPServer
+
+        agent = _create_agent("server-agent")
+        server = TrustGatedMCPServer(identity=agent, min_trust_score=0)
+
+        call_count = 0
+
+        async def flaky_handler(**kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count <= 2:
+                raise RuntimeError("temporary failure")
+            return "success"
+
+        server.register_tool(
+            name="flaky_tool",
+            handler=flaky_handler,
+            description="Sometimes fails",
+            input_schema={"properties": {}},
+            min_trust_score=0,
+        )
+        server._circuit_breaker_threshold = 5
+
+        # 2 failures
+        await server.invoke_tool(
+            "flaky_tool", {}, "did:mesh:caller", caller_trust_score=500,
+        )
+        await server.invoke_tool(
+            "flaky_tool", {}, "did:mesh:caller", caller_trust_score=500,
+        )
+        assert server._tool_failures.get("flaky_tool", 0) == 2
+
+        # 1 success should reset the counter
+        call = await server.invoke_tool(
+            "flaky_tool", {}, "did:mesh:caller", caller_trust_score=500,
+        )
+        assert call.success is True
+        assert server._tool_failures.get("flaky_tool", 0) == 0
+
+
+# ===========================================================================
+# P11: PII sanitization in error logs
+# ===========================================================================
+
+
+class TestPIISanitizationInErrors:
+    """P11: Exception messages should be truncated, not expose PII."""
+
+    @pytest.mark.asyncio
+    async def test_long_exception_truncated_in_call_error(self):
+        from agentmesh.integrations.mcp import TrustGatedMCPServer
+
+        agent = _create_agent("server-agent")
+        server = TrustGatedMCPServer(identity=agent, min_trust_score=0)
+
+        pii_message = "Error for user john.doe@example.com SSN 123-45-6789 " * 50
+
+        async def pii_handler(**kwargs):
+            raise ValueError(pii_message)
+
+        server.register_tool(
+            name="pii_tool",
+            handler=pii_handler,
+            description="Leaks PII in errors",
+            input_schema={"properties": {}},
+            min_trust_score=0,
+        )
+
+        call = await server.invoke_tool(
+            "pii_tool", {}, "did:mesh:caller", caller_trust_score=500,
+        )
+        assert call.error is not None
+        # Error message should be truncated to 200 chars + type prefix
+        assert len(call.error) < 300
+        # Should include the error type
+        assert "ValueError" in call.error
