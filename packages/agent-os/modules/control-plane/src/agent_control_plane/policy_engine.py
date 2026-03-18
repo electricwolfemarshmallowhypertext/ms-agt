@@ -28,6 +28,7 @@ import logging
 import uuid
 import os
 import re
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -606,32 +607,188 @@ class PolicyEngine:
         }
 
 
-def _fallback_sql_check(query: str) -> bool:
+@dataclass
+class SQLPolicyConfig:
+    """Configuration for SQL policy rules, loadable from YAML.
+
+    Attributes:
+        blocked_statements: SQL statement types to block (e.g., DROP, GRANT).
+        require_where_clause: Statements blocked only when missing WHERE.
+        blocked_create_types: CREATE subtypes to block (e.g., USER, ROLE).
+        blocked_patterns: Regex patterns for vendor-specific blocking.
+        disclaimer: Disclaimer text shown in logs.
+    """
+    blocked_statements: List[str] = field(default_factory=lambda: [
+        "DROP", "TRUNCATE", "ALTER", "GRANT", "REVOKE", "MERGE",
+    ])
+    require_where_clause: List[str] = field(default_factory=lambda: [
+        "DELETE", "UPDATE",
+    ])
+    blocked_create_types: List[str] = field(default_factory=lambda: [
+        "USER", "ROLE", "LOGIN",
+    ])
+    blocked_patterns: List[str] = field(default_factory=lambda: [
+        r'\bEXEC(UTE)?\s+XP_CMDSHELL\b',
+        r'\bEXEC(UTE)?\s+SP_CONFIGURE\b',
+        r'\bEXEC(UTE)?\s+SP_ADDROLEMEMBER\b',
+        r'\bLOAD_FILE\s*\(',
+        r'\bINTO\s+(OUT|DUMP)FILE\b',
+        r'\bLOAD\s+DATA\b',
+        r'\bMERGE\s+INTO\b',
+    ])
+    disclaimer: str = ""
+
+
+def load_sql_policy_config(path: str) -> SQLPolicyConfig:
+    """Load SQL policy configuration from a YAML file.
+
+    Args:
+        path: Path to a YAML file with ``sql_policy`` section.
+
+    Returns:
+        SQLPolicyConfig populated from the YAML data.
+
+    Raises:
+        FileNotFoundError: If the config file does not exist.
+        ValueError: If the YAML is missing the ``sql_policy`` section.
+
+    Example::
+
+        config = load_sql_policy_config("examples/policies/sql-safety.yaml")
+        rules = create_sql_policy_from_config(config)
+    """
+    import yaml
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"SQL policy config not found: {path}")
+
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f.read())
+
+    if not isinstance(data, dict) or "sql_policy" not in data:
+        raise ValueError(
+            f"YAML file must contain a 'sql_policy' section: {path}"
+        )
+
+    sp = data["sql_policy"]
+    return SQLPolicyConfig(
+        blocked_statements=[s.upper() for s in sp.get("blocked_statements", [])],
+        require_where_clause=[s.upper() for s in sp.get("require_where_clause", [])],
+        blocked_create_types=[s.upper() for s in sp.get("blocked_create_types", [])],
+        blocked_patterns=sp.get("blocked_patterns", []),
+        disclaimer=data.get("disclaimer", ""),
+    )
+
+
+def _fallback_sql_check(query: str, config: Optional[SQLPolicyConfig] = None) -> bool:
     """
     Fallback SQL check when sqlglot is not available.
-    
-    Uses regex pattern matching - less secure but provides basic protection.
+
+    Uses regex pattern matching. Rules are driven by *config*; when
+    *config* is ``None`` a built-in default set is used.
     """
+    if config is None:
+        config = SQLPolicyConfig()
+
     query_upper = query.upper()
     # Remove comments to prevent bypass
     query_clean = re.sub(r'/\*.*?\*/', '', query_upper, flags=re.DOTALL)
     query_clean = re.sub(r'--.*$', '', query_clean, flags=re.MULTILINE)
-    
-    # Check for destructive operations
-    destructive_patterns = [
-        r'\bDROP\s+(TABLE|DATABASE|INDEX|VIEW|SCHEMA)\b',
-        r'\bTRUNCATE\s+TABLE\b',
-        r'\bDELETE\s+FROM\s+\w+\s*(;|$)',  # DELETE without WHERE
-        r'\bALTER\s+TABLE\b',
-    ]
-    for pattern in destructive_patterns:
+
+    # Build patterns dynamically from config
+    patterns: List[str] = []
+
+    for stmt in config.blocked_statements:
+        if stmt == "DROP":
+            patterns.append(r'\bDROP\s+(TABLE|DATABASE|INDEX|VIEW|SCHEMA|PROCEDURE|FUNCTION|TRIGGER)\b')
+        elif stmt == "TRUNCATE":
+            patterns.append(r'\bTRUNCATE\s+(TABLE\s+)?\w+')
+        elif stmt == "ALTER":
+            patterns.append(r'\bALTER\s+(TABLE|DATABASE|SCHEMA)\b')
+        elif stmt == "GRANT":
+            patterns.append(r'\bGRANT\b')
+        elif stmt == "REVOKE":
+            patterns.append(r'\bREVOKE\b')
+        elif stmt == "MERGE":
+            patterns.append(r'\bMERGE\s+INTO\b')
+        elif stmt == "INSERT":
+            patterns.append(r'\bINSERT\s+INTO\b')
+        elif stmt in ("UPDATE", "DELETE"):
+            patterns.append(rf'\b{stmt}\b')
+
+    for stmt in config.require_where_clause:
+        if stmt == "DELETE":
+            patterns.append(r'\bDELETE\s+FROM\s+\w+\s*(;|$)')
+        elif stmt == "UPDATE":
+            patterns.append(r'\bUPDATE\s+\w+\s+SET\b(?!.*\bWHERE\b)')
+
+    for ct in config.blocked_create_types:
+        patterns.append(rf'\bCREATE\s+{ct}\b')
+        patterns.append(rf'\bALTER\s+{ct}\b')
+        patterns.append(rf'\bDROP\s+{ct}\b')
+
+    patterns.extend(config.blocked_patterns)
+
+    for pattern in patterns:
         if re.search(pattern, query_clean):
             return False
     return True
 
 
+def create_policies_from_config(
+    sql_config_path: Optional[str] = None,
+    sql_config: Optional[SQLPolicyConfig] = None,
+) -> List[PolicyRule]:
+    """Create security policies with SQL rules driven by external config.
+
+    Load SQL policy rules from a YAML config file or a pre-built
+    ``SQLPolicyConfig`` object.  Non-SQL policies (file access, credential
+    exposure) use built-in defaults.
+
+    Args:
+        sql_config_path: Path to a YAML file with ``sql_policy`` section.
+        sql_config: Pre-built config object (takes precedence over path).
+
+    Returns:
+        List of PolicyRule instances.
+
+    Example::
+
+        # From YAML file
+        rules = create_policies_from_config("examples/policies/sql-safety.yaml")
+
+        # From explicit config
+        cfg = SQLPolicyConfig(blocked_statements=["DROP", "GRANT"])
+        rules = create_policies_from_config(sql_config=cfg)
+    """
+    if sql_config is None and sql_config_path is not None:
+        sql_config = load_sql_policy_config(sql_config_path)
+    if sql_config is None:
+        sql_config = SQLPolicyConfig()
+
+    return _build_policy_rules(sql_config)
+
+
 def create_default_policies() -> List[PolicyRule]:
-    """Create a set of default security policies"""
+    """Create a set of default security policies.
+
+    .. deprecated::
+        The built-in rules are **samples** and are not guaranteed to be
+        exhaustive.  Use :func:`create_policies_from_config` with an
+        explicit YAML config file for production deployments.
+        See ``examples/policies/`` for sample configurations.
+    """
+    warnings.warn(
+        "create_default_policies() uses built-in sample rules that may not "
+        "cover all destructive SQL operations. For production use, load an "
+        "explicit policy config with create_policies_from_config(). "
+        "See examples/policies/sql-safety.yaml for a sample configuration.",
+        stacklevel=2,
+    )
+    return _build_policy_rules(SQLPolicyConfig())
+
+
+def _build_policy_rules(sql_config: SQLPolicyConfig) -> List[PolicyRule]:
 
     def no_system_file_access(request: ExecutionRequest) -> bool:
         """Prevent access to system files"""
@@ -653,10 +810,16 @@ def create_default_policies() -> List[PolicyRule]:
         Prevent destructive SQL operations using AST-level parsing.
         
         Uses sqlglot for proper SQL parsing to detect:
-        - DROP TABLE/DATABASE/INDEX/VIEW statements
+        - DROP TABLE/DATABASE/INDEX/VIEW/USER/ROLE statements
         - TRUNCATE statements
         - DELETE without WHERE clause
-        - ALTER TABLE statements
+        - UPDATE without WHERE clause
+        - ALTER TABLE/USER/ROLE statements
+        - GRANT / REVOKE privilege statements
+        - CREATE USER/ROLE/LOGIN statements
+        - EXEC/EXECUTE xp_cmdshell and other dangerous procedures
+        - MERGE INTO statements
+        - Dangerous file functions (LOAD_FILE, INTO OUTFILE)
         
         This prevents bypass attempts like:
         - Keywords in comments: /* DROP */ SELECT ...
@@ -665,57 +828,96 @@ def create_default_policies() -> List[PolicyRule]:
         """
         if request.action_type not in (ActionType.DATABASE_QUERY, ActionType.DATABASE_WRITE):
             return True
-            
+
         query = request.parameters.get("query", "")
         if not query.strip():
             return True
-            
+
         try:
             # Try to import sqlglot for AST-level parsing
             import sqlglot
             from sqlglot import exp
-            
+
             # Parse the SQL query into AST
             try:
                 statements = sqlglot.parse(query)
             except sqlglot.errors.ParseError:
                 # If parsing fails, fall back to conservative blocking
-                # Log the error but err on the side of caution
-                return _fallback_sql_check(query)
-            
+                return _fallback_sql_check(query, sql_config)
+
             for statement in statements:
                 if statement is None:
                     continue
-                    
-                # Check for DROP statements
+
+                # Check for DROP statements (tables, databases, users, roles, etc.)
                 if isinstance(statement, exp.Drop):
                     return False
-                    
+
                 # Check for TRUNCATE statements
                 if isinstance(statement, exp.Command) and statement.this.upper() == "TRUNCATE":
                     return False
-                    
+
                 # Check for DELETE without WHERE clause
                 if isinstance(statement, exp.Delete):
-                    # DELETE is only allowed with a WHERE clause
                     if statement.find(exp.Where) is None:
                         return False
-                        
+
+                # Check for UPDATE without WHERE clause
+                if isinstance(statement, exp.Update):
+                    if statement.find(exp.Where) is None:
+                        return False
+
                 # Check for ALTER statements
                 if isinstance(statement, exp.AlterTable):
                     return False
-                    
+
+                # Check for GRANT / REVOKE statements
+                if isinstance(statement, exp.Grant):
+                    return False
+
+                # Check for MERGE statements (can do INSERT/UPDATE/DELETE)
+                if isinstance(statement, exp.Merge):
+                    return False
+
+                # Check for CREATE USER/ROLE and ALTER USER/ROLE
+                if isinstance(statement, exp.Create):
+                    kind = statement.args.get("kind", "")
+                    if isinstance(kind, str) and kind.upper() in ("USER", "ROLE", "LOGIN"):
+                        return False
+
+                # Catch GRANT, REVOKE, EXEC, CREATE USER via Command nodes
+                # (sqlglot may parse some vendor-specific SQL as Command)
+                if isinstance(statement, exp.Command):
+                    cmd = statement.this.upper() if statement.this else ""
+                    if cmd in ("GRANT", "REVOKE", "EXEC", "EXECUTE", "MERGE"):
+                        return False
+                    # Block CREATE USER/ROLE/LOGIN parsed as Command
+                    if cmd == "CREATE":
+                        expr_text = statement.sql().upper()
+                        if any(kw in expr_text for kw in ("USER", "ROLE", "LOGIN")):
+                            return False
+
                 # Check for dangerous functions in any statement
                 for func in statement.find_all(exp.Func):
                     func_name = func.name.upper() if func.name else ""
                     if func_name in ("LOAD_FILE", "INTO OUTFILE", "INTO DUMPFILE"):
                         return False
-                        
+
+                # Check for EXEC xp_cmdshell and other dangerous procs
+                # in the full SQL text of the statement
+                stmt_sql = statement.sql().upper()
+                if re.search(r'\bEXEC(UTE)?\s+XP_CMDSHELL\b', stmt_sql):
+                    return False
+                if re.search(r'\bEXEC(UTE)?\s+SP_CONFIGURE\b', stmt_sql):
+                    return False
+                if re.search(r'\bEXEC(UTE)?\s+SP_ADDROLEMEMBER\b', stmt_sql):
+                    return False
+
             return True
-            
+
         except ImportError:
             # sqlglot not installed, fall back to keyword matching
-            return _fallback_sql_check(query)
+            return _fallback_sql_check(query, sql_config)
 
     return [
         PolicyRule(
