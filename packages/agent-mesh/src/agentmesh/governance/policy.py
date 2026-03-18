@@ -97,20 +97,29 @@ class PolicyRule(BaseModel):
             )
             return True
 
-    def _eval_expression(self, expr: str, context: dict) -> bool:
+    # Maximum recursion depth for compound expressions to prevent DoS
+    _MAX_EXPRESSION_DEPTH = 20
+
+    def _eval_expression(self, expr: str, context: dict, _depth: int = 0) -> bool:
         """Evaluate a simple expression."""
+        if _depth > self._MAX_EXPRESSION_DEPTH:
+            return False  # fail-closed on excessive nesting
+
+        if len(expr) > 2000:
+            return False  # reject oversized expressions
+
         # Handle compound conditions first (AND/OR)
         # This must be checked before individual conditions
 
         # OR conditions
         if " or " in expr:
             parts = expr.split(" or ")
-            return any(self._eval_expression(p.strip(), context) for p in parts)
+            return any(self._eval_expression(p.strip(), context, _depth + 1) for p in parts)
 
         # AND conditions
         if " and " in expr:
             parts = expr.split(" and ")
-            return all(self._eval_expression(p.strip(), context) for p in parts)
+            return all(self._eval_expression(p.strip(), context, _depth + 1) for p in parts)
 
         # Now handle atomic conditions
 

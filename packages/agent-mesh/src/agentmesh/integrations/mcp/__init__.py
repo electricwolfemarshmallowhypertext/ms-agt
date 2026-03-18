@@ -118,6 +118,11 @@ class TrustGatedMCPServer:
         self._verification_ttl = timedelta(minutes=10)
         self._max_verified_clients = 10_000
 
+    # P05: Maximum tool description length to prevent prompt injection via descriptions
+    _MAX_DESCRIPTION_LENGTH = 1000
+    # P12: Maximum total size of tool arguments (bytes when serialized)
+    _MAX_ARGUMENTS_SIZE = 1_048_576  # 1 MB
+
     def register_tool(
         self,
         name: str,
@@ -134,15 +139,25 @@ class TrustGatedMCPServer:
         Args:
             name: Tool name
             handler: Async handler function
-            description: Tool description
+            description: Tool description (max 1000 chars, stripped of control chars)
             input_schema: JSON Schema for inputs
             required_capability: Capability needed to invoke
             min_trust_score: Minimum trust score (overrides server default)
             require_human_sponsor: Require direct human sponsor
         """
+        # P05: Sanitize tool description — truncate and strip control characters
+        import re as _re
+        clean_desc = _re.sub(r"[\x00-\x1f\x7f-\x9f]", "", description)
+        if len(clean_desc) > self._MAX_DESCRIPTION_LENGTH:
+            logger.warning(
+                "Tool '%s' description truncated from %d to %d chars",
+                name, len(clean_desc), self._MAX_DESCRIPTION_LENGTH,
+            )
+            clean_desc = clean_desc[:self._MAX_DESCRIPTION_LENGTH]
+
         self._tools[name] = MCPTool(
             name=name,
-            description=description,
+            description=clean_desc,
             handler=handler,
             input_schema=input_schema or {},
             required_capability=required_capability,
@@ -252,6 +267,18 @@ class TrustGatedMCPServer:
             trust_score=caller_trust_score,
             capabilities_checked=caller_capabilities or [],
         )
+
+        # P12: Reject oversized arguments to prevent memory DoS
+        import json as _json
+        try:
+            args_size = len(_json.dumps(arguments))
+        except (TypeError, ValueError):
+            args_size = 0
+        if args_size > self._MAX_ARGUMENTS_SIZE:
+            call.error = f"Arguments too large: {args_size} bytes exceeds {self._MAX_ARGUMENTS_SIZE} limit"
+            call.completed_at = datetime.utcnow()
+            self._record_call(call)
+            return call
 
         # Check tool exists
         if tool_name not in self._tools:
