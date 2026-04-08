@@ -483,7 +483,7 @@ All gaps consolidated and rated by severity for remediation prioritization.
 | [OWASP Agentic Top 10 (2026)](../OWASP-COMPLIANCE.md) | `docs/OWASP-COMPLIANCE.md` | CC6.8 (malicious software), CC7.3 (vulnerability management), CC9.1 (risk mitigation) |
 | [OWASP LLM Top 10 (2025)](owasp-llm-top10-mapping.md) | `docs/compliance/owasp-llm-top10-mapping.md` | CC6.8 (LLM01, LLM07), C1.1 (LLM06), PI1.3 (LLM02, LLM09) |
 | [EU AI Act (2024/1689)](eu-ai-act-checklist.md) | `docs/compliance/eu-ai-act-checklist.md` | CC7.1 (Art. 12 logging), CC7.4 (Art. 14 human oversight), PI1.5 (Art. 12 record-keeping) |
-| [NIST AI RMF](../nist-rfi-mapping.md) | `docs/nist-rfi-mapping.md` | CC9.1 (Govern/Map functions), A1.2 (Measure function) |
+| [NIST AI RMF](nist-ai-rmf-alignment.md) | `docs/compliance/nist-ai-rmf-alignment.md` | CC9.1 (Govern/Map functions), A1.2 (Measure function) |
 
 ---
 

@@ -260,7 +260,7 @@ AGT maintains dedicated compliance mapping documents for seven major frameworks.
 | SOC 2 Type II | `docs/compliance/soc2-mapping.md` | 4/5 criteria addressed |
 | ATF Conformance | `docs/compliance/atf-conformance-assessment.md` | 25/25 requirements (7 partial) |
 | OWASP LLM Top 10 | `docs/compliance/owasp-llm-top10-mapping.md` | Full mapping |
-| NIST RFI (2026) | `docs/nist-rfi-mapping.md` | Question-by-question mapping |
+| NIST RFI (2026) | `docs/compliance/nist-rfi-2026-00206.md` | Question-by-question mapping |
 | South Korea AI Framework Act | `packages/agent-compliance/docs/compliance/south-korea-ai-framework-act.md` | Mapped |
 
 **How AGT addresses this subcategory:** Each compliance document systematically
@@ -720,7 +720,7 @@ requirements overlap with other frameworks.
 - **OWASP LLM Top 10:** [`docs/compliance/owasp-llm-top10-mapping.md`](owasp-llm-top10-mapping.md)
 - **EU AI Act Checklist:** [`docs/compliance/eu-ai-act-checklist.md`](eu-ai-act-checklist.md)
 - **SOC 2 Mapping:** [`docs/compliance/soc2-mapping.md`](soc2-mapping.md)
-- **NIST RFI Response:** [`docs/nist-rfi-mapping.md`](../nist-rfi-mapping.md)
+- **NIST RFI Response:** [`docs/compliance/nist-rfi-2026-00206.md`](nist-rfi-2026-00206.md)
 - **Threat Model (STRIDE):** [`docs/THREAT_MODEL.md`](../THREAT_MODEL.md)
 - **Architecture Overview:** [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md)
 

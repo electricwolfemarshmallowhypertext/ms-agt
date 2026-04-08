@@ -96,7 +96,7 @@ pip install agentmesh-lightning        # 強化学習トレーニングガバナ
 - **[脅威モデル](../../docs/THREAT_MODEL.md)** — 信頼境界、攻撃面、STRIDE 分析
 - **[アーキテクチャ](../../docs/ARCHITECTURE.md)** — システム設計、セキュリティモデル、トラストスコアリング
 - **[アーキテクチャ決定記録](../../docs/adr/README.md)** — ID、ランタイム、ポリシーに関する主要な ADR ログ
-- **[NIST RFI マッピング](../../docs/nist-rfi-mapping.md)** — NIST AI Agent セキュリティ RFI（2026-00206）へのマッピング
+- **[NIST RFI マッピング](../../docs/compliance/nist-rfi-2026-00206.md)** — NIST AI Agent セキュリティ RFI（2026-00206）へのマッピング
 
 ご質問がありましたら、[GitHub issue](https://github.com/microsoft/agent-governance-toolkit/issues) を作成するか、[コミュニティページ](../../COMMUNITY.md) をご覧ください。
 
