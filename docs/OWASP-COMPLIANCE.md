@@ -304,6 +304,6 @@ child = identity.delegate(
 
 *Last updated: March 2026*
 
-**[⬅ Back to README](../README.md)** · **[📈 Traction](TRACTION.md)**
+**[⬅ Back to README](../README.md)** · **[🛡️ MCP Top 10 Mapping](compliance/mcp-owasp-top10-mapping.md)** · **[📈 Traction](TRACTION.md)**
 
 </div>
