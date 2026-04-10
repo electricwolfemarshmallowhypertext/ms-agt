@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "pharma_compliance_demo"
 version = "3.0.2"
 description = "Pharma Compliance demo using Agent OS"
+license = {text = "MIT"}
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.4.0,<3.0",

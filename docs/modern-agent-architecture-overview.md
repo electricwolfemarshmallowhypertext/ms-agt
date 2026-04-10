@@ -85,18 +85,45 @@ Think of AGT like a **Linux kernel for AI agents**:
 Define exactly what each agent can and cannot do — enforced at the application layer, not by prompts:
 
 ```python
-from agent_os import PolicyEngine, CapabilityModel
-
-capabilities = CapabilityModel(
-    allowed_tools=["web_search", "read_file", "send_email"],
-    blocked_tools=["execute_code", "delete_file"],
-    blocked_patterns=[r"\b\d{3}-\d{2}-\d{4}\b"],  # Block SSN patterns
-    require_human_approval=True,
-    max_tool_calls=10,
+from agent_os.policies import PolicyEvaluator
+from agent_os.policies.schema import (
+    PolicyDocument, PolicyRule, PolicyCondition,
+    PolicyAction, PolicyOperator, PolicyDefaults,
 )
 
-engine = PolicyEngine(capabilities=capabilities)
-result = engine.evaluate(action="delete_file", input_text="/etc/passwd")
+policy = PolicyDocument(
+    name="agent-safety",
+    version="1.0",
+    description="Block dangerous tools and sensitive data patterns",
+    defaults=PolicyDefaults(action=PolicyAction.ALLOW),
+    rules=[
+        PolicyRule(
+            name="block-dangerous-tools",
+            condition=PolicyCondition(
+                field="tool_name",
+                operator=PolicyOperator.IN,
+                value=["execute_code", "delete_file"],
+            ),
+            action=PolicyAction.DENY,
+            message="Tool is blocked by policy",
+            priority=100,
+        ),
+        PolicyRule(
+            name="block-ssn-patterns",
+            condition=PolicyCondition(
+                field="input_text",
+                operator=PolicyOperator.MATCHES,
+                value=r"\b\d{3}-\d{2}-\d{4}\b",
+            ),
+            action=PolicyAction.DENY,
+            message="SSN pattern detected",
+            priority=90,
+        ),
+    ],
+)
+
+evaluator = PolicyEvaluator(policies=[policy])
+result = evaluator.evaluate({"tool_name": "delete_file", "input_text": "/etc/passwd"})
 # result.allowed == False — blocked deterministically, not probabilistically
 ```
 
@@ -194,42 +221,48 @@ Also available for: **TypeScript** (`npm install @agentmesh/sdk`), **.NET** (`do
 ### Step 2: Your First Governed Agent
 
 ```python
-from agent_os.policy import PolicyEngine, CapabilityModel
+from agent_os.policies import PolicyEvaluator
 
-# Define what this agent can do
-capabilities = CapabilityModel(
-    allowed_tools=["web_search", "read_file"],
-    blocked_tools=["execute_code", "delete_file"],
-    require_human_approval=True,
-    max_tool_calls=10,
-)
-
-engine = PolicyEngine(capabilities=capabilities)
+# Load YAML policy rules
+evaluator = PolicyEvaluator()
+evaluator.load_policies("policies/")
 
 # Allowed
-result = engine.evaluate(action="web_search", input_text="quarterly sales data")
+result = evaluator.evaluate({"tool_name": "web_search", "input_text": "quarterly sales data"})
 print(f"Allowed: {result.allowed}")  # True
 
 # Blocked — deterministically, not probabilistically
-result = engine.evaluate(action="delete_file", input_text="/critical/data.csv")
+result = evaluator.evaluate({"tool_name": "delete_file", "input_text": "/critical/data.csv"})
 print(f"Allowed: {result.allowed}")  # False
 ```
 
 ### Step 3: Wrap an Existing Framework
 
 ```python
-from agent_os import KernelSpace
-from agent_os.policy import CapabilityModel
+from agent_os.policies import PolicyEvaluator
 
-kernel = KernelSpace(
-    capabilities=CapabilityModel(
-        allowed_tools=["web_search", "calculator"],
-        max_tool_calls=5,
-    )
-)
+evaluator = PolicyEvaluator()
+evaluator.load_policies("policies/")
 
-# Wrap your LangChain / CrewAI / AutoGen agent — every tool call is now governed
-governed_agent = kernel.wrap(your_existing_agent)
+# Evaluate before any framework tool call
+decision = evaluator.evaluate({
+    "agent_id": "langchain-agent-1",
+    "tool_name": "web_search",
+    "action": "tool_call",
+})
+
+if decision.allowed:
+    result = your_langchain_agent.run(...)
+else:
+    print(f"Blocked: {decision.reason}")
+```
+
+For deeper integration, use framework-specific adapters:
+
+```bash
+pip install langchain-agentmesh      # LangChain
+pip install llamaindex-agentmesh     # LlamaIndex
+pip install crewai-agentmesh         # CrewAI
 ```
 
 ### Step 4: Verify OWASP Coverage

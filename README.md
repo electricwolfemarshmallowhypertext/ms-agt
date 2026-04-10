@@ -131,18 +131,18 @@ Still have questions? File a [GitHub issue](https://github.com/microsoft/agent-g
 ### Enforce a policy — Python
 
 ```python
-from agent_os import PolicyEngine, CapabilityModel
+from agent_os.policies import PolicyEvaluator
 
-# Define what this agent is allowed to do
-capabilities = CapabilityModel(
-    allowed_tools=["web_search", "file_read"],
-    denied_tools=["file_write", "shell_exec"],
-    max_tokens_per_call=4096
-)
+# Create evaluator and load YAML policy rules
+evaluator = PolicyEvaluator()
+evaluator.load_policies("policies/")   # or inline via PolicyDocument
 
 # Enforce policy before every action
-engine = PolicyEngine(capabilities=capabilities)
-decision = engine.evaluate(agent_id="researcher-1", action="tool_call", tool="web_search")
+decision = evaluator.evaluate({
+    "agent_id": "researcher-1",
+    "action": "tool_call",
+    "tool_name": "web_search",
+})
 
 if decision.allowed:
     # proceed with tool call
