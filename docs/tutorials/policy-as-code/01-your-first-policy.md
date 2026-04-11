@@ -1,3 +1,6 @@
+<!-- Copyright (c) Microsoft Corporation. -->
+<!-- Licensed under the MIT License. -->
+
 # Chapter 1: Your First Policy
 
 In this chapter you will write a YAML policy file that blocks dangerous agent

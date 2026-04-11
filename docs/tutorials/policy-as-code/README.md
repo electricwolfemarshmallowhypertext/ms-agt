@@ -20,10 +20,8 @@ pip install agent-os-kernel[full]
 | [03 — Rate Limiting](03-rate-limiting.md) | Preventing runaway agents | Set limits on how many actions an agent can take |
 | [04 — Conditional Policies](04-conditional-policies.md) | Policy composition and conflict resolution | Layer base + environment policies with conflict strategies |
 | [05 — Approval Workflows](05-approval-workflows.md) | Human-in-the-loop for sensitive actions | Route dangerous actions to a human before execution |
-| 06 — Policy Testing | Systematic validation with test matrices | Test every role + action + environment combination |
-| 07 — Policy Versioning | Safe rollout of policy changes | Compare v1 vs v2 behavior, catch regressions before deploying |
-
-> Chapters 06–07 are coming soon.
+| [06 — Policy Testing](06-policy-testing.md) | Systematic validation with test matrices | Test every role + action + environment combination |
+| [07 — Policy Versioning](07-policy-versioning.md) | Safe rollout of policy changes | Compare v1 vs v2 behavior, catch regressions before deploying |
 
 ## Running Examples
 

@@ -1,3 +1,6 @@
+<!-- Copyright (c) Microsoft Corporation. -->
+<!-- Licensed under the MIT License. -->
+
 # Chapter 3: Rate Limiting
 
 An agent with the right permissions can still cause problems if it runs out of

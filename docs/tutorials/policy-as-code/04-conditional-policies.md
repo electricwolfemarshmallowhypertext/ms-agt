@@ -1,3 +1,6 @@
+<!-- Copyright (c) Microsoft Corporation. -->
+<!-- Licensed under the MIT License. -->
+
 # Chapter 4: Conditional Policies
 
 In Chapters 1-3 each policy stood on its own — one file, one evaluator, one

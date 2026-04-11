@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 version: "1.0"
 name: my-first-policy
 description: A simple policy that blocks dangerous agent actions

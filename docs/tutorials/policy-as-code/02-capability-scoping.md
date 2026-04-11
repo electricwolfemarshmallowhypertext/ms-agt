@@ -1,3 +1,6 @@
+<!-- Copyright (c) Microsoft Corporation. -->
+<!-- Licensed under the MIT License. -->
+
 # Chapter 2: Capability Scoping
 
 In Chapter 1 you created a single policy that applies to every agent. In

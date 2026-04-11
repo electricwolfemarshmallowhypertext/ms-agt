@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 version: "1.0"
 name: environment-policy
 description: Rules that change based on the deployment environment

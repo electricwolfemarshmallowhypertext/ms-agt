@@ -463,5 +463,5 @@ every tool gets the right decision in every environment. That is policy
 testing.
 
 **Previous:** [Chapter 4 — Conditional Policies](04-conditional-policies.md)
-**Next:** Chapter 6 — Policy Testing (coming soon) — verify that every
+**Next:** [Chapter 6 — Policy Testing](06-policy-testing.md) — verify that every
 policy rule works correctly, automatically.
