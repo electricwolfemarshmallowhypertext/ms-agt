@@ -14,7 +14,7 @@ governed agents in each ecosystem.
 | **Identity & Auth** | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Trust Scoring** | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Audit Logging** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **MCP Security** | ✅ | ✅ | — | ✅ | ✅ |
+| **MCP Security** | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Execution Rings** | ✅ | — | ✅ | ✅ | ✅ |
 | **SRE / SLOs** | ✅ | — | ✅ | — | — |
 | **Kill Switch** | ✅ | — | ✅ | — | — |
@@ -100,8 +100,9 @@ governance stack for enterprise deployments:
 | `Integration` | `GovernanceMiddleware` for ASP.NET / Agent Framework |
 | `RateLimiting` | Token bucket rate limiter |
 | `Telemetry` | OpenTelemetry integration |
+| `Mcp` | `McpSecurityScanner` (poisoning, typosquatting, hidden instructions, rug pull, schema abuse, cross-server), `McpResponseSanitizer`, `McpCredentialRedactor`, `McpGateway` |
 
-**Roadmap:** MCP security, full lifecycle persistence.
+**Roadmap:** Full lifecycle persistence.
 
 ### Rust SDK
 
