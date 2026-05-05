@@ -48,6 +48,14 @@ cargo test --workspace
 cargo clippy --workspace
 ```
 
+## Examples
+
+Run the quickstart example to create a client, evaluate allowed and denied actions, and print the results:
+
+```bash
+cargo run -p agentmesh --example quickstart
+```
+
 ## Crates
 
 ### `agentmesh`
