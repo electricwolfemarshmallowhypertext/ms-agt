@@ -18,6 +18,7 @@ momentum and credibility. Submit a PR editing this file — see
 
 | Organization | Industry | Use Case | Contact |
 |---|---|---|---|
+| [Nobulex](https://github.com/arian-gogani/nobulex) | AI Agent Security | Bilateral receipt primitive for tamper-evident agent audit trails (PRs #1302, #1333) | [@arian-gogani](https://github.com/arian-gogani) |
 | [GitHub — awesome-copilot](https://github.com/github/awesome-copilot) | Developer Tools | AGT contributor reputation check (`agt-contributor-check`) integrated into CI for PR risk scoring | [@imran-siddique](https://github.com/imran-siddique) |
 | Azure (internal project) | Cloud Infrastructure | AGT identity layer integration for agent mesh trust verification | [@imran-siddique](https://github.com/imran-siddique) |
 | [chamber](https://github.com/ianphil/chamber) | AI Agent Infrastructure | AGT governance workflows for agent execution policy enforcement | [@ianphil](https://github.com/ianphil) |
