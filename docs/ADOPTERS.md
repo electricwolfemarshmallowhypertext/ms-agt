@@ -28,7 +28,7 @@ momentum and credibility. Submit a PR editing this file — see
 
 | Organization | Focus Area | Contact |
 |---|---|---|
-| | | |
+| [Data Quality-Aware Agent Governance](https://github.com/SomeshZanwar/data-quality-aware-agent-governance) | Combining AGT policy evaluation with external data quality signals — agent actions are blocked when the target dataset fails freshness or validation checks, not only when the agent lacks authorization. | [@SomeshZanwar](https://github.com/SomeshZanwar) |
 
 ---
 
