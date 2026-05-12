@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn scan_text_redacts_prompt_tags_and_secrets() {
-        let redactor = CredentialRedactor::new().unwrap();
+        let redactor = CredentialRedactor::new();
         let scanner = McpResponseScanner::new(
             redactor.clone(),
             Arc::new(InMemoryAuditSink::new(redactor)),
@@ -308,7 +308,7 @@ mod tests {
 
     #[test]
     fn scan_value_preserves_shape() {
-        let redactor = CredentialRedactor::new().unwrap();
+        let redactor = CredentialRedactor::new();
         let scanner = McpResponseScanner::new(
             redactor.clone(),
             Arc::new(InMemoryAuditSink::new(redactor)),
@@ -325,7 +325,7 @@ mod tests {
 
     #[test]
     fn scan_value_sanitizes_keys_and_keyed_secrets() {
-        let redactor = CredentialRedactor::new().unwrap();
+        let redactor = CredentialRedactor::new();
         let scanner = McpResponseScanner::new(
             redactor.clone(),
             Arc::new(InMemoryAuditSink::new(redactor)),
