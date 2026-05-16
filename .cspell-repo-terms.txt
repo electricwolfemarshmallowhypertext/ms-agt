@@ -126,6 +126,7 @@ Permissioned
 pids
 plotly
 pmcrepo
+pipefail
 popen
 Printf
 Println
@@ -261,3 +262,16 @@ workflow
 workflows
 xfail
 xunit
+carveout
+htek
+mastra
+parseability
+pkgs
+USERPROFILE
+argparse
+fastapi
+lockfiles
+rstrip
+scipy
+structlog
+uvicorn
