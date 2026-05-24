@@ -305,3 +305,11 @@ workflows
 XACML
 xfail
 xunit
+Fernet
+fernet
+genkey
+importorskip
+digestmod
+urandom
+octo
+kayalopez
