@@ -44,6 +44,7 @@ capsys
 carloshvp
 carryforward
 carveout
+CCPA
 cedarling
 cedarpy
 cheatsheet
@@ -238,6 +239,7 @@ nonlocal
 noqa
 normalises
 nostr
+nother
 npmjs
 numpy
 octo
@@ -299,6 +301,7 @@ returncode
 rfile
 rfind
 rglob
+rmtree
 Rootfs
 rrdatas
 rstrip
@@ -323,6 +326,7 @@ setext
 setitem
 setuid
 setuptools
+shutil
 siddique
 SIEM
 skipif
