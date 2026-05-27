@@ -392,5 +392,6 @@ dedup
 dedupe
 eprintln
 peekable
+uppercased
 recognising
 subresources
