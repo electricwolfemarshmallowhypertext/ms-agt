@@ -47,6 +47,7 @@ carveout
 CCPA
 cedarling
 cedarpy
+chdir
 cheatsheet
 checkpointed
 checkpointing
@@ -100,6 +101,7 @@ Dockerfiles
 Docstrings
 DOTALL
 dpkg
+DYLD
 eastus
 egresspolicy
 EigenTrust
@@ -133,6 +135,7 @@ fnmatch
 Fprintf
 fria
 fromisoformat
+fromkeys
 fromtimestamp
 frontmatter
 frozenset
@@ -150,7 +153,6 @@ gomod
 GOPROXY
 governancepolicy
 gvisor
-h├⌐llo
 hasattr
 hashlib
 HEALTHCHECK
@@ -164,6 +166,7 @@ HTTPMCP
 httpx
 hypercall
 Hyperlight
+h├⌐llo
 IATP
 idweb
 IGNORECASE
@@ -176,6 +179,7 @@ isinstance
 isoformat
 isort
 itertools
+javaagent
 jwkjwks
 kanish
 kata
@@ -197,6 +201,7 @@ linkcheck
 linkified
 Linq
 LlamaIndex
+LOCALAPPDATA
 lockdown
 lockfile
 lockfiles
@@ -209,6 +214,7 @@ masquerade
 mastra
 materialised
 maxlen
+Mevil
 mgmt
 microkernel
 Microsoft
@@ -254,7 +260,9 @@ parseability
 parseable
 pathed
 pathext
+pathexts
 pathlib
+pathsep
 PCRE
 peekable
 Permissioned
@@ -274,6 +282,8 @@ Printf
 Println
 privatelink
 promptdefense
+PSMODULEPATH
+psmodules
 pycache
 Pydantic
 pypdf
@@ -281,8 +291,10 @@ pypistats
 pyproject
 pytest
 pytestmark
+PYTHONHOME
 pythonhosted
 PYTHONPATH
+pythonstartup
 pyupgrade
 pyyaml
 quickstarts
@@ -305,6 +317,7 @@ rmtree
 Rootfs
 rrdatas
 rstrip
+RUBYOPT
 run_results
 runsc
 RustCrypto
@@ -329,6 +342,7 @@ setuptools
 shutil
 siddique
 SIEM
+sitecustomize
 skipif
 Slidev
 slos
@@ -395,6 +409,7 @@ utcnow
 uvicorn
 VADP
 venv
+VIRTUALENVS
 vitest
 vnet
 westus
@@ -405,3 +420,4 @@ workflows
 XACML
 xfail
 xunit
+ZDOTDIR
