@@ -4,7 +4,7 @@
 
 Each agent gets its own Docker container scoped to a session.  Containers
 are hardened by default: all capabilities dropped, ``no-new-privileges``,
-optional read-only root filesystem, non-root user, ``pids_limit=256``.
+optional read-only root filesystem, non-root user, ``pids_limit=128``.
 
 Policy-driven resource limits, tool proxies, and network proxies are set
 up at session creation time when a ``PolicyDocument`` is passed.
