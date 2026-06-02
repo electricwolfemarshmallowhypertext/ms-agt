@@ -53,6 +53,9 @@ REGISTERED_PACKAGES = {
     "agent-discovery", "agent_discovery",
     "agentmesh-discovery", "agentmesh_discovery",
     "agt-sandbox", "agt_sandbox",
+    "agt-policies", "agt_policies",
+    "agent-control-specification", "agent_control_specification",
+    "acs-generator", "acs_generator",
     # Common dependencies
     "pydantic", "pyyaml", "cryptography", "pynacl", "httpx", "aiohttp",
     "fastapi", "uvicorn", "requests", "packaging", "structlog", "click", "rich", "numpy", "scipy",
@@ -147,8 +150,6 @@ REGISTERED_PACKAGES = {
 # requirements.txt (they must use path references like -e ../primitives)
 LOCAL_ONLY_PACKAGES = {
     "agent-primitives",
-    "agent-control-specification",
-    "agent_control_specification",
     "emk",
 }
 
@@ -163,6 +164,17 @@ REGISTERED_NPM_PACKAGES = {
     "@microsoft/agent-governance-antigravity-cli",
     "@microsoft/agent-os-copilot-extension", "@microsoft/agentos-mcp-server",
     "@microsoft/agent-os-vscode",
+    "agent-control-specification",
+    "agent-control-specification-linux-x64-gnu",
+    "agent-control-specification-linux-arm64-gnu",
+    "agent-control-specification-darwin-x64",
+    "agent-control-specification-darwin-arm64",
+    "agent-control-specification-win32-x64-msvc",
+    "agent-control-specification-opa-linux-x64",
+    "agent-control-specification-opa-linux-arm64",
+    "agent-control-specification-opa-darwin-x64",
+    "agent-control-specification-opa-darwin-arm64",
+    "agent-control-specification-opa-win32-x64",
     # Common deps
     "typescript", "tsup", "vitest", "express", "zod", "@mastra/core",
     "@modelcontextprotocol/sdk", "ws", "commander", "chalk",
@@ -510,7 +522,7 @@ def check_package_json(filepath: str) -> list[str]:
         return findings
 
     registered_lower = {p.lower() for p in REGISTERED_NPM_PACKAGES}
-    for section in ("dependencies", "devDependencies", "peerDependencies"):
+    for section in ("dependencies", "devDependencies", "peerDependencies", "optionalDependencies"):
         for pkg in data.get(section, {}):
             if pkg.lower() not in registered_lower:
                 findings.append(
