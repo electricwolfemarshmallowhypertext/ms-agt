@@ -32,6 +32,7 @@ arrowsize
 asctime
 ASGI
 aspnet
+astimezone
 astream
 asynccontextmanager
 asyncio
@@ -47,12 +48,15 @@ backendunavailable
 backpressure
 baseexception
 baselined
+basenames
 behaviour
 behavioural
+Birsan
 bursty
 bypassable
 bytecodes
 caas
+cands
 caplog
 capsys
 carloshvp
@@ -106,6 +110,7 @@ dateutil
 davidequarracino
 dbt
 dearmor
+deasync
 Dedup
 dedupe
 defi
@@ -141,6 +146,7 @@ eprintln
 esac
 Errno
 Errorf
+esbuild
 esrp
 ESRPRELPACMAN
 EUAI
@@ -152,6 +158,7 @@ expanduser
 fastapi
 Fatalf
 Fernet
+filepkg
 finalizer
 findall
 finditer
@@ -163,6 +170,7 @@ FLUSHDB
 fmean
 fnmatch
 folderlocation
+Fpkg
 Fprintf
 fria
 fromisoformat
@@ -239,6 +247,7 @@ lawcontinue
 levelname
 linkcheck
 linkified
+linkpkg
 Linq
 LlamaIndex
 LOCALAPPDATA
@@ -299,6 +308,7 @@ normalisation
 normalises
 nostr
 nother
+notrequirements
 npmjs
 numpy
 octo
@@ -310,8 +320,10 @@ opencode
 openpolicyagent
 openshell
 ORAS
+oserror
 ospo
 oxycodone
+packument
 paramref
 parseability
 parseable
@@ -322,14 +334,18 @@ pathext
 pathexts
 pathlib
 pathsep
+pathspec
+pathspecs
 PCRE
 peekable
 Permissioned
 pharma
 pids
 pipefail
+Pipfile
 pipx
 PKCS
+pkgjson
 pkgs
 plotly
 pluggable
@@ -387,6 +403,7 @@ rrdatas
 rsplit
 rstrip
 RUBYOPT
+rustdecimal
 RUSTUP
 run_results
 runsc
@@ -469,6 +486,7 @@ tlsv
 typeerror
 typer
 typosquat
+typosquats
 ufeff
 uncallable
 keystore
@@ -479,12 +497,15 @@ uninspectable
 unioned
 Unmarshal
 unmigrated
+unparseable
 unreachability
+unrecognised
 unredacted
 Unregisters
 unrevocation
 unrevoke
 Unrevoking
+unscanned
 unsets
 uppercased
 urandom
