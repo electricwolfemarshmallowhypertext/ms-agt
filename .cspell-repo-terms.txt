@@ -1,4 +1,5 @@
 AAIF
+abprs
 abspath
 abstractmethod
 Acta
@@ -23,6 +24,7 @@ Amol
 anomalyco
 antigravity
 APIM
+apikey
 apiserver
 approv
 approvеd
@@ -156,6 +158,7 @@ exfil
 exfiltrated
 exfiltration
 expanduser
+FAKEFORTESTING
 fastapi
 Fatalf
 Fernet
@@ -359,6 +362,7 @@ Printf
 Println
 privatelink
 promptdefense
+psour
 PSMODULEPATH
 psmodules
 pycache
@@ -433,6 +437,7 @@ setext
 setitem
 setuid
 setuptools
+sharedaccesskey
 shortone
 shutil
 siddique
@@ -547,6 +552,7 @@ ABAC
 AGENTDOJO
 AILLM
 AKIAFAKE
+AKIAFAKEFORTEST
 AKIDEXAMPLE
 BLOCKME
 BOTO
@@ -574,6 +580,7 @@ Threadsafe
 Uninstrumented
 Ureq
 XFORM
+xoxq
 x86
 ababa
 achat
