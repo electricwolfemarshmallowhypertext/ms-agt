@@ -811,6 +811,10 @@ securityscorecards
 subpkg
 Syft
 syft
+arraycomprehension
+setcomprehension
+objectcomprehension
+innererror
 tzdata
 unvalidated
 userinfo
