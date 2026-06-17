@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import json
 import logging
 import os
 import re
@@ -27,6 +28,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from .policy import Policy, PolicyDecision, PolicyEngine
 from .audit import AuditLog
+from .trace_sink import TraceConfig, TRACEAuditSink
 from .approval import ApprovalHandler, ApprovalRequest, AutoRejectApproval
 from .advisory import AdvisoryCheck, AdvisoryDecision
 from .approval_protocol import ActionBinding, ActionTarget, ApprovalCoordinator
@@ -129,6 +131,7 @@ class GovernanceConfig:
     approval_coordinator: Optional[ApprovalCoordinator] = None
     approval_chain_id: Optional[str] = None
     approval_ttl_seconds: float = 300.0
+    trace: Optional[TraceConfig] = None
 
 
 class GovernanceDenied(Exception):
@@ -188,6 +191,31 @@ class GovernedCallable:
         # Policy version stamped onto action-bound approval records (ADR-0030),
         # so an approval is bound to the policy revision in effect when granted.
         self._policy_version = getattr(loaded, "version", "1.0") or "1.0"
+
+        # Policy bundle hash for TRACE emission (ADR-0032). Computed once at
+        # init from the raw policy bytes so emit() has a stable, verifiable hash.
+        if isinstance(policy, str):
+            if os.path.isfile(policy):
+                with open(policy, "rb") as _f:
+                    _policy_bytes = _f.read()
+            else:
+                _policy_bytes = policy.encode()
+        else:
+            _policy_bytes = json.dumps(
+                loaded.model_dump() if hasattr(loaded, "model_dump") else {},
+                sort_keys=True,
+                default=str,
+            ).encode()
+        self._policy_bundle_hash = "sha256:" + hashlib.sha256(_policy_bytes).hexdigest()
+
+        # TRACE session-close sink (ADR-0032) -- only active when config.trace is set.
+        self._trace_sink: Optional[TRACEAuditSink] = None
+        if config.trace is not None:
+            self._trace_sink = TRACEAuditSink(
+                config=config.trace,
+                agent_did=config.agent_id,
+                policy_bundle_hash=self._policy_bundle_hash,
+            )
 
         # Ring enforcement — only active when a ring is explicitly configured.
         self._ring_enforcer: Any = None
@@ -603,6 +631,21 @@ class GovernedCallable:
         """Access the audit log for inspection."""
         return self._audit
 
+    def close_session(self) -> Optional[str]:
+        """Emit a TRACE v0.2 Trust Record for this governed session (ADR-0032).
+
+        Call once after all governed tool calls for a session are complete.
+        Writes a signed Trust Record JSON to the path configured in
+        GovernanceConfig.trace.output_path.
+
+        Returns the path of the written file, or None when TRACE emission is
+        not configured (config.trace is None), the audit log has no entries,
+        or the agent_id is not a SPIFFE URI or DID.
+        """
+        if self._trace_sink is None:
+            return None
+        return self._trace_sink.emit(self._audit)
+
 
 def govern(
     fn: Callable,
@@ -619,6 +662,7 @@ def govern(
     approval_coordinator: Optional[ApprovalCoordinator] = None,
     approval_chain_id: Optional[str] = None,
     approval_ttl_seconds: float = 300.0,
+    trace: Optional[TraceConfig] = None,
 ) -> GovernedCallable:
     """Wrap any callable with AGT governance — 2-line integration.
 
@@ -659,5 +703,6 @@ def govern(
         approval_coordinator=approval_coordinator,
         approval_chain_id=approval_chain_id,
         approval_ttl_seconds=approval_ttl_seconds,
+        trace=trace,
     )
     return GovernedCallable(fn, config)

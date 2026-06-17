@@ -7,6 +7,7 @@ Declarative policy engine with automated compliance mapping.
 Append-only audit logs with optional external sinks.
 """
 from .govern import govern, GovernedCallable, GovernanceConfig, GovernanceDenied
+from .trace_sink import TraceConfig, TRACEAuditSink
 from hypervisor.models import ExecutionRing
 from hypervisor.rings.enforcer import ResourceConstraints, ResourceType, RING_CONSTRAINTS, RingCheckResult
 from .approval import (
@@ -120,6 +121,9 @@ __all__ = [
     "GovernedCallable",
     "GovernanceConfig",
     "GovernanceDenied",
+    # TRACE Trust Record emission (ADR-0032)
+    "TraceConfig",
+    "TRACEAuditSink",
     # Ring enforcement (issue #2667)
     "ExecutionRing",
     "ResourceConstraints",
