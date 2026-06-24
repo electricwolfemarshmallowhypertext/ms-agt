@@ -56,7 +56,11 @@ jobs:
                 .map((r) => r.user.login)
             )];
 
-            // A maintainer is anyone whose effective repo permission is maintain or admin.
+            // A maintainer is anyone whose repo role is maintain or admin.
+            // NOTE: use `role_name`, not `permission`. The legacy `permission`
+            // field only returns admin/write/read — a Maintain-role user shows
+            // up as `permission: "write"`, so checking `permission` would
+            // wrongly reject every maintainer who is not an admin.
             let approvingMaintainer = null;
             for (const login of approvers) {
               const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
@@ -64,7 +68,7 @@ jobs:
                 repo: context.repo.repo,
                 username: login,
               });
-              if (perm.permission === 'admin' || perm.permission === 'maintain') {
+              if (perm.role_name === 'admin' || perm.role_name === 'maintain') {
                 approvingMaintainer = login;
                 break;
               }
