@@ -55,6 +55,8 @@ jobs:
                 .filter((r) => r.state === 'APPROVED' && r.user && r.user.type === 'User' && r.user.login !== author)
                 .map((r) => r.user.login)
             )];
+            core.info(`PR author: @${author}`);
+            core.info(`Approving (non-author, human): ${approvers.join(', ') || '(none)'}`);
 
             // A maintainer is anyone whose repo role is maintain or admin.
             // NOTE: use `role_name`, not `permission`. The legacy `permission`
@@ -63,14 +65,19 @@ jobs:
             // wrongly reject every maintainer who is not an admin.
             let approvingMaintainer = null;
             for (const login of approvers) {
-              const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                username: login,
-              });
-              if (perm.role_name === 'admin' || perm.role_name === 'maintain') {
-                approvingMaintainer = login;
-                break;
+              try {
+                const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  username: login,
+                });
+                core.info(`  @${login}: permission=${perm.permission} role_name=${perm.role_name}`);
+                if (perm.role_name === 'admin' || perm.role_name === 'maintain') {
+                  approvingMaintainer = login;
+                  break;
+                }
+              } catch (e) {
+                core.info(`  @${login}: permission lookup failed: ${e.status || ''} ${e.message}`);
               }
             }
 
