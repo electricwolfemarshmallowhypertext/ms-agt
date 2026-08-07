@@ -845,7 +845,7 @@ from hypervisor import Hypervisor
 hv = Hypervisor()
 
 # The verify_behavior() method checks for drift and auto-slashes:
-# result = await hv.verify_behavior(
+# result = hv.verify_behavior(
 #     session_id="session:prod",
 #     agent_did="did:mesh:agent-b",
 #     claimed_embedding=claimed,
