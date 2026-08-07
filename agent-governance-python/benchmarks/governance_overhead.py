@@ -491,10 +491,10 @@ def run_session_benchmarks() -> list[BenchmarkResult]:
 
     async def session_lifecycle():
         hv = Hypervisor()
-        s = await hv.create_session(config=SessionConfig(), creator_did="did:mesh:admin")
-        await hv.join_session(s.sso.session_id, "did:mesh:agent", sigma_raw=0.8)
-        await hv.activate_session(s.sso.session_id)
-        await hv.terminate_session(s.sso.session_id)
+        s = hv.create_session(config=SessionConfig(), creator_did="did:mesh:admin")
+        hv.join_session(s.sso.session_id, "did:mesh:agent", sigma_raw=0.8)
+        hv.activate_session(s.sso.session_id)
+        hv.terminate_session(s.sso.session_id)
 
     results.append(
         bench_async("Session lifecycle", "hypervisor", session_lifecycle, iterations=500)
